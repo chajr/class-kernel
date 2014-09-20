@@ -9,20 +9,10 @@
  */
 namespace ClassKernel\Base;
 
-use DOMException;
-use DOMElement;
-use ClassKernel\Data\DomXml;
+use ClassKernel\Data\Object;
 
-trait Object
+trait BlueObject
 {
-    /**
-     * name of key prefix for xml node
-     * if array key was integer
-     *
-     * @var string
-     */
-    protected $_integerKeyPrefix = 'integer_key';
-
     /**
      * if there was some errors in object, that variable will be set on true
      *
@@ -75,7 +65,6 @@ trait Object
     protected $_options = [
         'data'              => null,
         'type'              => null,
-        'indexKeyPrefix'    => null
     ];
 
     /**
@@ -95,9 +84,6 @@ trait Object
         }
 
         $this->initializeObject($data);
-        if ($this->_options['indexKeyPrefix']) {
-            $this->_integerKeyPrefix = $this->_options['indexKeyPrefix'];
-        }
 
         switch ($this->_options['type']) {
             case 'json':
@@ -264,28 +250,6 @@ trait Object
     }
 
     /**
-     * return value of prefix for integer keys when try to save as xml
-     *
-     * @return string
-     */
-    public function getIntegerKeyString()
-    {
-        return $this->_integerKeyPrefix;
-    }
-
-    /**
-     * allow to set new prefix for integer key
-     *
-     * @param string $key
-     * @return Object
-     */
-    public function setIntegerKeyString($key)
-    {
-        $this->_integerKeyPrefix = (string)$key;
-        return $this;
-    }
-
-    /**
      * remove single error, or all object errors
      *
      * @param string $key
@@ -356,7 +320,7 @@ trait Object
      */
     public function setData($key, $data = null)
     {
-        if(is_array($key)) {
+        if (is_array($key)) {
             foreach ($key as $dataKey => $data) {
                 $this->_putData($dataKey, $data);
             }
@@ -446,7 +410,7 @@ trait Object
                     if ($dataToCheck === $data[$key]) {
                         return true;
                     }
-                } else if ($dataToCheck === null) {
+                } elseif ($dataToCheck === null) {
                     return true;
                 }
             } else {
@@ -454,7 +418,7 @@ trait Object
                     if ($dataToCheck === $this->_DATA[$key]) {
                         return true;
                     }
-                } else if ($dataToCheck === null) {
+                } elseif ($dataToCheck === null) {
                     return true;
                 }
             }
@@ -563,28 +527,10 @@ trait Object
 
     /**
      * return object data as xml representation
-     *
-     * @param bool $addCdata
-     * @param string|boolean $dtd
-     * @param string $version
-     * @return string
      */
-    public function toXml($addCdata = true, $dtd = false, $version = '1.0')
+    public function toXml()
     {
-        $this->_prepareData();
-
-        $config = ['version' => $version, 'encoding' => 'UTF-8'];
-        $xml    = new DomXml($config);
-        $root   = $xml->createElement('root');
-        $xml    = $this->_arrayToXml($this->_DATA, $xml, $addCdata, $root);
-
-        $xml->appendChild($root);
-        if ($dtd) {
-            $dtd = "<!DOCTYPE root SYSTEM '$dtd'>";
-        }
-        $xml->formatOutput = true;
-
-        return $dtd . $xml->saveXmlFile(false, true);
+        
     }
 
     /**
@@ -643,11 +589,11 @@ trait Object
      */
     public function traveler(
         $method,
-        $methodAttributes   = null,
-        $data               = null,
-        $function           = false,
-        $recursive          = false
-    ){
+        $methodAttributes = null,
+        $data = null,
+        $function = false,
+        $recursive = false
+    ) {
         if (!$data) {
             $data = $this->_DATA;
         }
@@ -762,28 +708,7 @@ trait Object
      */
     protected function _appendXml($data)
     {
-        $xml                        = new DomXml();
-        $xml->preserveWhiteSpace    = false;
-        $bool                       = @$xml->loadXML($data);
-
-        if (!$bool) {
-            $this->_errorsList['xml_load_error']    = $data;
-            $this->_hasErrors                       = true;
-            return $this;
-        }
-
-        try{
-            $temp                  = $this->_xmlToArray($xml->documentElement);
-            $this->_DATA           = $temp;
-        } catch (DOMException $exception) {
-            $this->_errorsList[$exception->getCode()] = [
-                'message'   => $exception->getMessage(),
-                'line'      => $exception->getLine(),
-                'file'      => $exception->getFile(),
-                'trace'     => $exception->getTraceAsString(),
-            ];
-            $this->_hasErrors = true;
-        }
+        
 
         return $this;
     }
@@ -791,56 +716,12 @@ trait Object
     /**
      * recurrent function to travel on xml nodes and set their data as object data
      *
-     * @param DOMElement $data
+     * @param $data
      * @return array
      */
-    protected function _xmlToArray(DOMElement $data)
+    protected function _xmlToArray($data)
     {
-        $temporaryData = [];
-
-        /** @var $node DOMElement */
-        foreach ($data->childNodes as $node) {
-            $nodeName = $this->_stringToIntegerKey($node->nodeName);
-            $nodeData = [];
-
-            if ($node->hasAttributes() && $node->getAttribute('serialized_object')) {
-                $temporaryData[$nodeName] = unserialize($node->nodeValue);
-                continue;
-            }
-
-            if ($node->hasAttributes()) {
-                foreach ($node->attributes as $key => $value) {
-                    $nodeData['@attributes'][$key] = $value->nodeValue;
-                }
-            }
-
-            if ($node->hasChildNodes()) {
-                $childNodesData = [];
-
-                /** @var $childNode DOMElement */
-                foreach ($node->childNodes as $childNode) {
-                    if ($childNode->nodeType === 1) {
-                        $childNodesData = $this->_xmlToArray($node);
-                    }
-                }
-
-                if (!empty($childNodesData)) {
-                    $temporaryData[$nodeName] = $childNodesData;
-                    continue;
-                }
-            }
-
-            if (!empty($nodeData)) {
-                $temporaryData[$nodeName] = array_merge(
-                    [$node->nodeValue],
-                    $nodeData
-                );
-            } else {
-                $temporaryData[$nodeName] = $node->nodeValue;
-            }
-        }
-
-        return $temporaryData;
+        
     }
 
     /**
@@ -929,136 +810,10 @@ trait Object
      * recursive method to create structure xml structure of object DATA
      *
      * @param $data
-     * @param DomXml $xml
-     * @param boolean $addCdata
-     * @param DomXml|DOMElement $parent
-     * @return DomXml
      */
-    protected function _arrayToXml($data, DomXml $xml, $addCdata, $parent)
+    protected function _arrayToXml($data)
     {
-        foreach ($data as $key => $value) {
-            $key        = str_replace(' ', '_', $key);
-            $attributes = [];
 
-            if (is_object($value)) {
-                $value = [
-                    '@attributes' => ['serialized_object' => true],
-                    serialize($value)
-                ];
-            }
-
-            try{
-                if (isset($value['@attributes'])) {
-                    $attributes = $value['@attributes'];
-                    unset ($value['@attributes']);
-                }
-
-                if (is_array($value)) {
-                    $parent = $this->_convertArrayDataToXml(
-                        $value, $addCdata, $xml, $key, $parent, $attributes
-                    );
-                    continue;
-                }
-
-                $element = $this->_appendDataToNode($addCdata, $xml, $key, $value);
-                $parent->appendChild($element);
-
-            } catch (DOMException $exception) {
-                $this->_errorsList[$exception->getCode()] = [
-                    'message'   => $exception->getMessage(),
-                    'line'      => $exception->getLine(),
-                    'file'      => $exception->getFile(),
-                    'trace'     => $exception->getTraceAsString(),
-                ];
-                $this->_hasErrors = true;
-            }
-        }
-
-        return $xml;
-    }
-
-    /**
-     * convert array DATA value to xml format and return as xml object
-     *
-     * @param array|string $value
-     * @param string $addCdata
-     * @param DomXml $xml
-     * @param string|integer $key
-     * @param DOMElement $parent
-     * @param array $attributes
-     * @return DOMElement
-     */
-    protected function _convertArrayDataToXml(
-        $value, $addCdata, DomXml $xml, $key, $parent, array $attributes
-    ){
-        if (count($value) === 1 && !empty($attributes) && isset($value[0])) {
-            $children = $this->_appendDataToNode(
-                $addCdata, $xml, $key, $value[0]);
-        } else {
-            $children = $xml->createElement(
-                $this->_integerToStringKey($key)
-            );
-            $this->_arrayToXml($value, $xml, $addCdata, $children);
-        }
-        $parent->appendChild($children);
-
-        foreach ($attributes as $attributeKey => $attributeValue) {
-            $children->setAttribute($attributeKey, $attributeValue);
-        }
-
-        return $parent;
-    }
-
-    /**
-     * append data to node
-     *
-     * @param string $addCdata
-     * @param DomXml $xml
-     * @param string|integer $key
-     * @param string $value
-     * @return DOMElement
-     */
-    protected function _appendDataToNode($addCdata, DomXml $xml, $key, $value)
-    {
-        if ($addCdata) {
-            $cdata      = $xml->createCDATASection($value);
-            $element    = $xml->createElement(
-                $this->_integerToStringKey($key)
-            );
-            $element->appendChild($cdata);
-        } else {
-            $element = $xml->createElement(
-                $this->_integerToStringKey($key),
-                $value
-            );
-        }
-
-        return $element;
-    }
-
-    /**
-     * if array key is number, convert it to string with set up _integerKeyPrefix
-     *
-     * @param string|integer $key
-     * @return string
-     */
-    protected function _integerToStringKey($key)
-    {
-        if (is_numeric($key)) {
-            $key = $this->_integerKeyPrefix . '_' . $key;
-        }
-        return $key;
-    }
-
-    /**
-     * remove prefix from integer array key
-     *
-     * @param string $key
-     * @return string|integer
-     */
-    protected function _stringToIntegerKey($key)
-    {
-        return str_replace($this->_integerKeyPrefix . '_', '', $key);
     }
 
     /**
@@ -1082,17 +837,26 @@ trait Object
      *
      * @param mixed $data
      */
-    public function initializeObject(&$data){}
+    public function initializeObject(&$data)
+    {
+        
+    }
 
     /**
      * can be overwritten by children objects to start with some special
      * operations
      */
-    public function afterInitializeObject(){}
+    public function afterInitializeObject()
+    {
+        
+    }
 
     /**
      * can be overwritten by children objects to make some special process on
      * data before return
      */
-    protected function _prepareData(){}
+    protected function _prepareData()
+    {
+        
+    }
 }

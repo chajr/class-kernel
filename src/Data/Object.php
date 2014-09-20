@@ -9,7 +9,9 @@
  */
 namespace ClassKernel\Data;
 
+use ClassKernel\Base\BlueObject;
+
 class Object
 {
-    use \ClassKernel\Base\Object;
+    use BlueObject;
 }
