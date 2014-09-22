@@ -476,10 +476,10 @@ trait BlueObject
      * replace changed data by original data
      * set data changed to false only if restore whole data
      *
-     * @param string $key
+     * @param string|null $key
      * @return Object
      */
-    public function restoreData($key)
+    public function restoreData($key = null)
     {
         if ($key === null) {
             $mergedData         = array_merge($this->_DATA, $this->_originalDATA);
