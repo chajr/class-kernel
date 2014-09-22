@@ -10,6 +10,7 @@
 namespace ClassKernel\Base;
 
 use ClassKernel\Data\Object;
+use stdClass;
 
 trait BlueObject
 {
@@ -70,7 +71,7 @@ trait BlueObject
     /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
-     * like: json, xml, serialized, default is array
+     * like: json, xml, serialized or stdClass default is array
      *
      * @param array|null $options
      */
@@ -85,17 +86,21 @@ trait BlueObject
 
         $this->initializeObject($data);
 
-        switch ($this->_options['type']) {
-            case 'json':
+        switch (true) {
+            case $this->_options['type'] === 'json':
                 $this->_appendJson($data);
                 break;
 
-            case 'xml':
+            case $this->_options['type'] === 'xml':
                 $this->_appendXml($data);
                 break;
 
-            case 'serialized':
+            case $this->_options['type'] === 'serialized':
                 $this->_appendSerialized($data);
+                break;
+
+            case $data instanceof stdClass:
+                $this->_appendStdClass($data);
                 break;
 
             default:
@@ -740,6 +745,19 @@ trait BlueObject
 
         return $this;
     }
+
+    /**
+     * get class variables and set them as data
+     *
+     * @param stdClass $class
+     * @return Object
+     */
+    protected function _appendStdClass(stdClass $class)
+    {
+        $this->_DATA = get_object_vars($class);
+        return $this;
+    }
+    
 
     /**
      * set data from serialized string as object data

@@ -1,0 +1,24 @@
+{
+    "name": "chajr/class-kernel",
+    "license": "Apache-2.0",
+    "description": "Class Kernel libraries",
+    "keywords": [],
+    "homepage": "https://github.com/chajr/class-kernel",
+    "version": "0.1.0",
+    "authors": [
+        {
+            "name": "Michał Adamiak",
+            "email": "chajr@bluetree.pl",
+            "homepage": "https://github.com/chajr",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ClassKernel\\": "src/"
+        }
+    }
+}
