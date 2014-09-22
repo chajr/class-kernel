@@ -504,6 +504,7 @@ trait BlueObject
     {
         $this->_originalDATA = $this->_DATA;
         $this->_dataChanged  = false;
+        $this->_newKeys      = [];
         return $this;
     }
 
