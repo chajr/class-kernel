@@ -540,6 +540,23 @@ trait BlueObject
     }
 
     /**
+     * return object as stdClass
+     * 
+     * @return stdClass
+     */
+    public function toStdClass()
+    {
+        $this->_prepareData();
+        $data = new stdClass();
+
+        foreach ($this->_DATA as $key => $val) {
+            $data->$key = $val;
+        }
+
+        return $data;
+    }
+
+    /**
      * return object attributes as array
      * without DATA
      *
@@ -652,7 +669,7 @@ trait BlueObject
     protected function _callUserFunction($function, $method, $key, $value, $methodAttributes)
     {
         if ($function) {
-            return call_user_func($method, $key, $value, $methodAttributes);
+            return call_user_func($method, $key, $value, $this, $methodAttributes);
         }
         return $this->$method($key, $value, $methodAttributes);
     }
