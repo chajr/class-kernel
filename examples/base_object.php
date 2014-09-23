@@ -22,7 +22,7 @@ require_once __DIR__ . '/../src/Data/Object.php';
         </div>
     </div>
     <div class="example">
-        <h3>Replace data (show origin data)</h3>
+        <h3>Replace data (show origin data + restore data)</h3>
         <div>
             <?php require_once __DIR__ . '/base_object/replace_data.php'; ?>
         </div>
@@ -34,13 +34,7 @@ require_once __DIR__ . '/../src/Data/Object.php';
         </div>
     </div>
     <div class="example">
-        <h3>Convert data (string, serialization)</h3>
-        <div>
-            <?php require_once __DIR__ . '/base_object/convert_data.php'; ?>
-        </div>
-    </div>
-    <div class="example">
-        <h3>Destroy data (restore data)</h3>
+        <h3>Destroy data</h3>
         <div>
             <?php require_once __DIR__ . '/base_object/destroy_data.php'; ?>
         </div>
@@ -58,9 +52,9 @@ require_once __DIR__ . '/../src/Data/Object.php';
         </div>
     </div>
     <div class="example">
-        <h3>Extending Object</h3>
+        <h3>Recursive function</h3>
         <div>
-            <?php require_once __DIR__ . '/base_object/extending.php'; ?>
+            <?php require_once __DIR__ . '/base_object/recursive.php'; ?>
         </div>
     </div>
 <?php
