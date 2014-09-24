@@ -166,7 +166,7 @@ trait BlueObject
      *
      * @param string $method
      * @param array $arguments
-     * @return Object|bool|mixed
+     * @return \ClassKernel\Data\Object|bool|mixed
      */
     public function __call($method, $arguments)
     {
@@ -437,7 +437,7 @@ trait BlueObject
      * automatically set data to original array
      *
      * @param string|null $key
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     public function unsetData($key = null)
     {
@@ -464,7 +464,7 @@ trait BlueObject
      * set object key data to null
      *
      * @param string $key
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     public function clearData($key)
     {
@@ -477,7 +477,7 @@ trait BlueObject
      * set data changed to false only if restore whole data
      *
      * @param string|null $key
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     public function restoreData($key = null)
     {
@@ -498,7 +498,7 @@ trait BlueObject
      * this method set current DATA as original data
      * replace original data by DATA and set data changed to false
      *
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     public function replaceDataArrays()
     {
@@ -677,8 +677,8 @@ trait BlueObject
     /**
      * allow to join two blue objects into one
      *
-     * @param $object
-     * @return Object
+     * @param \ClassKernel\Data\Object $object
+     * @return \ClassKernel\Data\Object
      */
     public function mergeBlueObject(Object $object)
     {
@@ -710,7 +710,7 @@ trait BlueObject
      * apply given json data as object data
      *
      * @param string $data
-     * @return $this Object
+     * @return \ClassKernel\Data\Object
      */
     protected function _appendJson($data)
     {
@@ -727,31 +727,22 @@ trait BlueObject
      * apply given xml data as object data
      *
      * @param $data string
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     protected function _appendXml($data)
     {
-        
+        $loadedXml      = simplexml_load_string($data);
+        $jsonXml        = json_encode($loadedXml);
+        $this->_DATA    = json_decode($jsonXml, true);
 
         return $this;
-    }
-
-    /**
-     * recurrent function to travel on xml nodes and set their data as object data
-     *
-     * @param $data
-     * @return array
-     */
-    protected function _xmlToArray($data)
-    {
-        
     }
 
     /**
      * set data given in constructor
      *
      * @param mixed $data
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     protected function _appendArray($data)
     {
@@ -768,7 +759,7 @@ trait BlueObject
      * get class variables and set them as data
      *
      * @param stdClass $class
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     protected function _appendStdClass(stdClass $class)
     {
@@ -782,7 +773,7 @@ trait BlueObject
      * if data is an object set one variable where key is an object class name
      *
      * @param mixed $data
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     protected function _appendSerialized($data)
     {
@@ -803,7 +794,7 @@ trait BlueObject
      *
      * @param string $key
      * @param mixed $data
-     * @return Object
+     * @return \ClassKernel\Data\Object
      */
     protected function _putData($key, $data)
     {
