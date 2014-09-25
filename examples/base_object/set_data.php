@@ -80,6 +80,22 @@ $std->first_data    = 'a';
 $std->second_data   = 'b';
 $std->third_data    = 'c';
 $objectStd          = new ClassKernel\Data\Object(['data' => $std]);
+
+$xml = '<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <to>aaaa</to>
+    <from>
+        <t>dddd</t>
+        <t>eeee</t>
+    </from>
+    <heading>bbbbbb</heading>
+    <body>ccccc</body>
+</root>
+';
+$objectXml = new ClassKernel\Data\Object([
+    'data' => $xml,
+    'type' => 'xml'
+]);
 ?>
 
 <h5>Created objects dump</h5>
@@ -90,4 +106,5 @@ var_dump($objectArray->getData());
 var_dump($objectJson->getData());
 var_dump($objectSerialized->getData());
 var_dump($objectStd->getData());
+var_dump($objectXml->getData());
 echo '</pre>';
