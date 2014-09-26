@@ -90,6 +90,24 @@ $xml = '<?xml version="1.0" encoding="UTF-8"?>
     </from>
     <heading>bbbbbb</heading>
     <body>ccccc</body>
+    <element>attr</element>
+</root>
+';
+$objectSimpleXml = new ClassKernel\Data\Object([
+    'data' => $xml,
+    'type' => 'simple_xml'
+]);
+
+$xml = '<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <to>aaaa</to>
+    <from>
+        <t>dddd</t>
+        <t>eeee</t>
+    </from>
+    <heading>bbbbbb</heading>
+    <body>ccccc</body>
+    <element attribute="some attribute" at="next">attr</element>
 </root>
 ';
 $objectXml = new ClassKernel\Data\Object([
@@ -106,5 +124,6 @@ var_dump($objectArray->getData());
 var_dump($objectJson->getData());
 var_dump($objectSerialized->getData());
 var_dump($objectStd->getData());
+var_dump($objectSimpleXml->getData());
 var_dump($objectXml->getData());
 echo '</pre>';
