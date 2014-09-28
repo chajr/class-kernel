@@ -56,6 +56,9 @@ class Register
     public static function initialize()
     {
         self::$_singletons = new Object();
+        if (class_exists('Core\Events\Model\Event')) {
+            self::$eventDisabled = false;
+        }
     }
 
     /**
@@ -67,6 +70,9 @@ class Register
      */
     public static function getObject($name, $args = [])
     {
+        self::tracer('getObject', debug_backtrace(), '006c94');
+        self::callEvent('register_get_object_before', [&$name, &$args]);
+
         $object = false;
 
         try {
@@ -77,12 +83,14 @@ class Register
             }
         } catch (Exception $e) {
             self::$_error[] = $e;
+            self::callEvent('register_get_object_exception', [$name, $args, $e]);
         }
 
         if ($object) {
             self::setClassCounter(self::name2code($name));
         }
 
+        self::callEvent('register_get_object_after', [$name, $args, $object]);
         return $object;
     }
 
@@ -125,6 +133,9 @@ class Register
      */
     public static function getSingleton($class, $args = [], $instanceName = null)
     {
+        self::tracer('getSingleton', debug_backtrace(), '006c94');
+        self::callEvent('register_get_singleton_before', [&$class, &$args, $instanceName]);
+
         $name = $class;
         if ($instanceName) {
             $name = $instanceName;
@@ -138,6 +149,10 @@ class Register
             $instance = self::_setObject($class, $instanceCode, $args);
         }
 
+        self::callEvent(
+            'register_get_singleton_after',
+            [$class, $args, $instanceName, $instance]
+        );
         return $instance;
     }
 
@@ -168,6 +183,8 @@ class Register
     }
 
     /**
+     * create singleton object
+     * 
      * @param string $class
      * @param string $name
      * @param mixed $args
@@ -175,7 +192,8 @@ class Register
      */
     protected static function _setObject($class, $name, $args)
     {
-        self::tracer('initialize object', debug_backtrace(), '006c94');
+        self::tracer('_setObject', debug_backtrace(), '006c94');
+        self::callEvent('register_set_object_before', [&$class, &$name, &$args]);
 
         $object = self::getObject($class, $args);
 
@@ -183,6 +201,7 @@ class Register
             self::$_singletons->setData($name, $object);
         }
 
+        self::callEvent('register_set_object_after', [$class, $name, $args, $object]);
         return $object;
     }
 
@@ -258,7 +277,7 @@ class Register
             return;
         }
 
-        if (class_exists('Core\Events\Helper\Tracer')) {
+        if (class_exists('Core\Events\Model\Event')) {
 
         }
     }
