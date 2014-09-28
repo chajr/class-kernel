@@ -401,50 +401,40 @@ trait BlueObject
      * checking by === operator
      * possibility to compare with origin data
      *
-     * @param string|array $key
      * @param mixed $dataToCheck
+     * @param string|null $key
      * @param boolean $origin
      * @return bool
      */
-    public function compareData($key, $dataToCheck, $origin = null)
+    public function compareData($dataToCheck, $key = null, $origin = null)
     {
-        if (is_array($key)) {
-            if ($origin) {
-                $mergedData = array_merge($this->_DATA, $this->_originalDATA);
-                $data       = $this->_removeNewKeys($mergedData);
-
-                if ($dataToCheck === $data) {
-                    return true;
-                }
-            } else {
-                if ($dataToCheck === $this->_DATA) {
-                    return true;
-                }
-            }
+        if ($origin) {
+            $mergedData = array_merge($this->_DATA, $this->_originalDATA);
+            $data       = $this->_removeNewKeys($mergedData);
         } else {
-            if ($origin) {
-                $mergedData = array_merge($this->_DATA, $this->_originalDATA);
-                $data       = $this->_removeNewKeys($mergedData);
-
-                if (isset($data[$key])) {
-                    if ($dataToCheck === $data[$key]) {
-                        return true;
-                    }
-                } elseif ($dataToCheck === null) {
-                    return true;
-                }
-            } else {
-                if (isset($this->_DATA[$key])) {
-                    if ($dataToCheck === $this->_DATA[$key]) {
-                        return true;
-                    }
-                } elseif ($dataToCheck === null) {
-                    return true;
-                }
-            }
+            $data = $this->_DATA;
         }
 
-        return false;
+        if ($dataToCheck instanceof Object) {
+            $dataToCheck = $dataToCheck->getData();
+        }
+
+        switch (true) {
+            case $key === null:
+                if ($dataToCheck === $data) {
+                    return true;
+                } else {
+                    return false;
+                }
+            // no break, always will return boolean value
+            default:
+                if (isset($data[$key]) && $dataToCheck === $data[$key]) {
+                    return true;
+                } else {
+                    return false;
+                }
+            // no break, always will return boolean value
+        }
     }
 
     /**
