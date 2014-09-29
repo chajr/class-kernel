@@ -6,9 +6,11 @@
 
 <h5>Export as String</h5>
 <code>
-<pre>echo $object->toString();</pre>
+<pre>echo $object</pre>
+<pre>echo $object->toString('. ');</pre>
 </code>
-<pre><?php echo $object->toString();?></pre>
+<pre><?php echo $object;?></pre>
+<pre><?php echo $object->toString('. ');?></pre>
 
 <h5>Export as serialized data</h5>
 <code>

@@ -80,6 +80,13 @@ trait BlueObject
     protected $_integerKeyPrefix = 'integer_key';
 
     /**
+     * separator for data to return as string
+     * 
+     * @var string
+     */
+    protected $_separator = ', ';
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -241,7 +248,7 @@ trait BlueObject
     public function __toString()
     {
         $this->_prepareData();
-        return implode(', ', $this->getData());
+        return implode($this->_separator, $this->getData());
     }
 
     /**
@@ -517,12 +524,36 @@ trait BlueObject
      * return object as string
      * each data value separated by coma
      *
+     * @param string $separator
      * @return string
      */
-    public function toString()
+    public function toString($separator)
     {
+        $this->_separator = $separator;
         $this->_prepareData();
         return $this->__toString();
+    }
+
+    /**
+     * return current separator
+     * 
+     * @return string
+     */
+    public function returnSeparator()
+    {
+        return $this->_separator;
+    }
+
+    /**
+     * allow to change default separator
+     * 
+     * @param string $separator
+     * @return Object
+     */
+    public function changeSeparator($separator)
+    {
+        $this->_separator = $separator;
+        return $this;
     }
 
     /**
