@@ -279,10 +279,10 @@ trait BlueObject
     /**
      * remove single error, or all object errors
      *
-     * @param string $key
+     * @param string|null $key
      * @return Object
      */
-    public function clearObjectError($key)
+    public function clearObjectError($key = null)
     {
         if ($key) {
             unset ($this->_errorsList[$key]);
@@ -324,7 +324,7 @@ trait BlueObject
      */
     public function getData($key = null)
     {
-        $this->_prepareData();
+        $this->_prepareData($key);
 
         if (!$key) {
             return $this->_DATA;
@@ -367,7 +367,7 @@ trait BlueObject
      */
     public function getOriginalData($key = null)
     {
-        $this->_prepareData();
+        $this->_prepareData($key);
 
         $mergedData = array_merge($this->_DATA, $this->_originalDATA);
         $data       = $this->_removeNewKeys($mergedData);
@@ -1171,8 +1171,10 @@ trait BlueObject
     /**
      * can be overwritten by children objects to make some special process on
      * data before return
+     * 
+     * @param string|null $key
      */
-    protected function _prepareData()
+    protected function _prepareData($key = null)
     {
         
     }
