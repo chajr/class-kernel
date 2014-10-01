@@ -192,4 +192,73 @@ Object has possibility to merge with other Object by `mergeBlueObject` method.
 Method has one attribute that is other Object instance that will be joined into
 Object on which we call merge method.
 
+Object errors
+--------------
+Object has build in simple error handling. All errors are stored inside of `$_errorsList`
+variable as array. To check that Object has errors just call `hasErrors` method
+that will return `true` if there was some error in object.  
+To return list of errors from object call `getObjectError` method. That method has
+one optional parameter that is error key (to return some concrete error).  
+Also we can clear object error or single error using `clearObjectError` method.
+Without parameter will clear all errors and with key only error for given key.
+
+### Possible errors
+* **append xml data** - can return error with `xml_load_error` key when try to load xml data
+* **working with xml data** - when object catch `DOMException` trying create array from xml data
+(code will be `Exception->getCode()` value)
+* **try to access wrong magic method** - return `wrong_method` code with class and method name
+* **convert array to xml** - when object catch `DOMException` trying create array from xml data
+(code will be `Exception->getCode()` value)
+
+Extending Object
+--------------
+Extending object can be done on two ways. First classic is use `extend`:
+
+```php
+use ClassKernel\Data\Object;
+
+class Test extends Object
+{
+
+}
+```
+or use trait to inject logic to other object:
+
+```php
+class Test extends OtherClass
+{
+    use ClassKernel\Base\BlueObject;
+}
+```
+
+Object has some special methods that are empty and are implemented directly for
+extending.
+
+* **initializeObject** - is called at beginning of constructor and take as parameter all options (_as reference_)
+* **afterInitializeObject** - is called at end of constructor and loaded data (has no parameters)
+* **_prepareData** - is protected method lunched before export data or get data by `getData` or `getOriginalData` methods
+on two last examples can have `$key` parameter that is key name for data to return.
+
+Some usable methods
+--------------
+Other usable public methods inside of Object:
+
+### Magic methods
+* **__get** - allow to access object data by using method variable `$object->key_name`
+* **__set** - allow to set object data by using method variable `$object->key_name = 'value'`
+* **__isset** - used when called function `isset` on object variable `isset($object->key_name)`
+will use method `hasData` to return value
+* **__unset** - used when called function `unset` on object variable `unset($object->key_name)`
+will use method `unsetData` to remove value
+* **__set_state** - will return object data (_like getData()_) when use `var_dump` on object `var_dump($object)`
+
+### Normal methods
+* **returnSeparator** - return current set separator for return data as string
+* **toArray** - return object attributes as array
+* **traveler** - allow to change data inside of object by using method or function
+  * **$method** - name of method or function to change data
+  * **$methodAttributes** - some additional attributes for method or function
+  * **$data** - data to change, if null use object data (_default is null_)
+  * **$function** - if true call `$method` attribute as function (_default is false_)
+  * **$recursive** - change data even in associative array if true (_default is false_)
 
