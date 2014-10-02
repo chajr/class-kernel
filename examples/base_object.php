@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/header.php';
 require_once __DIR__ . '/../src/Base/BlueObject.php';
+require_once __DIR__ . '/../src/Base/Register.php';
 require_once __DIR__ . '/../src/Data/Object.php';
+require_once __DIR__ . '/../src/Data/Xml.php';
 ?>
     <div class="example">
         <h3>Set data into Object</h3>
