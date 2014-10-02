@@ -87,7 +87,7 @@ class Register
         }
 
         if ($object) {
-            self::setClassCounter(self::name2code($name));
+            self::_setClassCounter(self::name2code($name));
         }
 
         self::callEvent('register_get_object_after', [$name, $args, $object]);
@@ -210,7 +210,7 @@ class Register
      *
      * @return array
      */
-    public function getRegisteredObjects()
+    public static function getRegisteredObjects()
     {
         $list = [];
         foreach (self::$_singletons->getData() as $name => $class) {
@@ -236,7 +236,7 @@ class Register
      * @param string $class
      * @return Register
      */
-    public static function setClassCounter($class)
+    protected static function _setClassCounter($class)
     {
         self::$_classCounter[$class] += 1;
     }
