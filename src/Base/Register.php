@@ -55,9 +55,12 @@ class Register
      */
     public static function initialize()
     {
-        self::$_singletons = new Object();
-        if (class_exists('Core\Events\Model\Event')) {
+        if (class_exists('ClassEvents\Model\Event')) {
             self::$eventDisabled = false;
+        }
+
+        if (class_exists('ClassBenchmark\Helper\Tracer')) {
+            self::$tracerDisabled = false;
         }
     }
 
@@ -135,6 +138,7 @@ class Register
     {
         self::tracer('getSingleton', debug_backtrace(), '006c94');
         self::callEvent('register_get_singleton_before', [&$class, &$args, $instanceName]);
+        self::_singletonContainer();
 
         $name = $class;
         if ($instanceName) {
@@ -157,17 +161,26 @@ class Register
     }
 
     /**
+     * check that singleton object container was initialized and create if not
+     */
+    protected static function _singletonContainer()
+    {
+        if (!self::$_singletons) {
+            self::$_singletons = new Object();
+        }
+    }
+
+    /**
      * destroy singleton object in register
      *
      * @param string $class
      */
     public static function destroy($class)
     {
-        $instanceCode   = self::name2code($class);
-        $number         = self::$_classCounter[$class];
+        $instanceCode = self::name2code($class);
 
         self::$_singletons->unsetData($instanceCode);
-        self::$_classCounter[$class] = "destroyed [$number]";
+        self::$_classCounter[$class] = "destroyed [$class]";
     }
 
     /**

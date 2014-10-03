@@ -10,7 +10,7 @@ use ClassKernel\Base\Register;
 <div class="example">
     <h3>Base Register usage</h3>
     <div>
-        <h5>Initialize Register</h5>
+        <h5>Initialize Register (not required)</h5>
         <code>
             <pre>Register::initialize()</pre>
         </code>
@@ -65,11 +65,17 @@ var_dump($objectData->getData())</pre>
     <h3>Destroy singleton object</h3>
     <div>
         <code>
-            <pre>Register::destroy('special_key')
-var_dump(Register::getRegisteredObjects())</pre>
+            <pre>var_dump(Register::getClassCounter())
+var_dump(Register::getRegisteredObjects())
+Register::destroy('special_key')
+var_dump(Register::getRegisteredObjects())
+var_dump(Register::getClassCounter())</pre>
         </code>
+        <pre><?php var_dump(Register::getClassCounter())?></pre>
+        <pre><?php var_dump(Register::getRegisteredObjects())?></pre>
         <?php Register::destroy('special_key')?>
         <pre><?php var_dump(Register::getRegisteredObjects())?></pre>
+        <pre><?php var_dump(Register::getClassCounter())?></pre>
     </div>
 </div>
 <?php
