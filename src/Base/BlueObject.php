@@ -579,8 +579,7 @@ trait BlueObject
     {
         $this->_prepareData();
 
-        $config = ['version' => $version, 'encoding' => 'UTF-8'];
-        $xml    = new Xml($config);
+        $xml    = new Xml(['version' => $version]);
         $root   = $xml->createElement('root');
         $xml    = $this->_arrayToXml($this->_DATA, $xml, $addCdata, $root);
 
@@ -591,8 +590,15 @@ trait BlueObject
         }
 
         $xml->formatOutput = true;
+        $xmlData = $xml->saveXmlFile(false, true);
 
-        return $dtd . $xml->saveXmlFile(false, true);
+        if ($xml->hasErrors()) {
+            $this->_hasErrors       = true;
+            $this->_errorsList[]    = $xml->getError();
+            return false;
+        }
+
+        return $dtd . $xmlData;
     }
 
     /**

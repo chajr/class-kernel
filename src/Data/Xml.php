@@ -129,13 +129,13 @@ class Xml extends DOMDocument
      * error information
      * @var string
      */
-    public $err = null;
+    public $_error = null;
 
     /**
      * last free id
      * @var string
      */
-    public $idList;
+    protected $_idList;
 
     /**
      * default constructor options
@@ -143,8 +143,8 @@ class Xml extends DOMDocument
      * @var array
      */
     protected $_options = [
-        'version'   =>'',
-        'encoding'  => ''
+        'version'   => '1.0',
+        'encoding'  => 'UTF-8'
     ];
 
     /**
@@ -180,18 +180,18 @@ class Xml extends DOMDocument
         $bool                        = @file_exists($url);
 
         if (!$bool) {
-            $this->err = 'file_not_exists';
+            $this->_error = 'file_not_exists';
             return false;
         }
 
         $bool = $this->load($url);
         if (!$bool) {
-            $this->err = 'loading_file_error';
+            $this->_error = 'loading_file_error';
             return false;
         }
 
         if ($parse && !@$this->validate()) {
-            $this->err = 'parse_file_error';
+            $this->_error = 'parse_file_error';
             return false;
         }
 
@@ -204,10 +204,11 @@ class Xml extends DOMDocument
      * @param string $url xml file path
      * @param boolean $asString if true return as string
      * @return string|boolean
-     * @example saveXml('sciezka/plik.xml'); zapis do pliku
-     * @example saveXml(0, 1) zwraca jako tekst
+     * 
+     * @example saveXml('path/filename.xml'); save to file
+     * @example saveXml(false, true) will return as simple text
      */
-    public final function saveXmlFile($url, $asString = false)
+    public function saveXmlFile($url, $asString = false)
     {
         Register::tracer('save xml file', debug_backtrace(), '7E3A02');
 
@@ -216,14 +217,13 @@ class Xml extends DOMDocument
         if ($url) {
             $bool = $this->save($url);
             if (!$bool) {
-                $this->err = 'save_file_error';
+                $this->_error = 'save_file_error';
                 return false;
             }
         }
 
         if ($asString) {
-            $data = $this->saveXML();
-            return $data;
+            return $this->saveXML();
         }
 
         return true;
@@ -234,7 +234,7 @@ class Xml extends DOMDocument
      *
      * @return integer|boolean return ID or null if there wasn't any node
      */
-    public final function getFreeId()
+    public function getFreeId()
     {
         $root = $this->documentElement;
 
@@ -244,7 +244,7 @@ class Xml extends DOMDocument
             $id     = array_keys($tab, 'create_new_free_id');
 
             unset($tab);
-            $this->idList = $id;
+            $this->_idList = $id;
             return $id[0];
         }
 
@@ -259,7 +259,7 @@ class Xml extends DOMDocument
      * @param array|boolean $list list of find nodes for recurrence
      * @return array
      */
-    private function _searchByAttribute(
+    protected function _searchByAttribute(
         DOMNodeList $node,
         $value,
         array $list = []
@@ -304,7 +304,7 @@ class Xml extends DOMDocument
      * @param string $id
      * @return boolean return true if exists
      */
-    public final function checkId($id)
+    public function checkId($id)
     {
         $id = $this->getElementById($id);
 
@@ -325,5 +325,50 @@ class Xml extends DOMDocument
     {
         $id = $this->getElementById($id);
         return $id;
+    }
+
+    /**
+     * check that Xml object has error
+     * 
+     * @return bool
+     */
+    public function hasErrors()
+    {
+        if ($this->_error) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * clear error information
+     * 
+     * @return Xml
+     */
+    public function clearErrors()
+    {
+        $this->_error = null;
+        return $this;
+    }
+
+    /**
+     * return error code
+     * 
+     * @return string
+     */
+    public function getError()
+    {
+        return $this->_error;
+    }
+
+    /**
+     * return xml string
+     * 
+     * @return bool|string
+     */
+    public function __toString()
+    {
+        return $this->saveXmlFile(false, true);
     }
 }
