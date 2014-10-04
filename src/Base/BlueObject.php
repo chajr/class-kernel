@@ -6,6 +6,7 @@
  * @subpackage  Base
  * @author      Michał Adamiak    <chajr@bluetree.pl>
  * @copyright   chajr/bluetree
+ * @link https://github.com/chajr/class-kernel/doc/BlueObject.md BlueObject class documentation
  */
 namespace ClassKernel\Base;
 
