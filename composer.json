@@ -1,8 +1,9 @@
 {
     "name": "chajr/class-kernel",
+    "type": "library",
     "license": "Apache-2.0",
     "description": "Class Kernel libraries",
-    "keywords": [],
+    "keywords": ["register", "xml", "object container", "class kernel"],
     "homepage": "https://github.com/chajr/class-kernel",
     "version": "0.1.0",
     "authors": [
