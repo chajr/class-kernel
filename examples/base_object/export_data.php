@@ -42,3 +42,9 @@ $object->setObject($std);
 <pre>var_dump($object->toStdClass())</pre>
 </code>
 <pre><?php var_dump($object->toStdClass())?></pre>
+
+<h5>Export as xml</h5>
+<code>
+    <pre>echo htmlspecialchars($object->toXml())</pre>
+</code>
+<pre><?php echo htmlspecialchars($object->toXml())?></pre>

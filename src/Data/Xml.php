@@ -171,7 +171,7 @@ class Xml extends DOMDocument
      * @param string $url xml file path
      * @param boolean $parse if true will check file DTD
      * @return boolean
-     * @example loadXml('cfg/config.xml', true)
+     * @example loadXmlFile('cfg/config.xml', true)
      */
     public function loadXmlFile($url, $parse = false)
     {
@@ -206,8 +206,8 @@ class Xml extends DOMDocument
      * @param boolean $asString if true return as string
      * @return string|boolean
      * 
-     * @example saveXml('path/filename.xml'); save to file
-     * @example saveXml(false, true) will return as simple text
+     * @example saveXmlFile('path/filename.xml'); save to file
+     * @example saveXmlFile(false, true) will return as simple text
      */
     public function saveXmlFile($url, $asString = false)
     {
