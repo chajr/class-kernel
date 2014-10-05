@@ -15,10 +15,10 @@ Its recommended to use packages `ClassEvents` and optionally `ClassBenchmark`.
 
 Documentation
 --------------
-[ClassKernel\Base\BlueObject](https://githib.com/chajr/class-kernel/doc/BlueObject.md "BlueObject and Object")
-[ClassKernel\Base\Register](https://githib.com/chajr/class-kernel/doc/Register.md "Register")
-[ClassKernel\Data\Xml](https://githib.com/chajr/class-kernel/doc/Xml.md "Xml")
-[Events](https://githib.com/chajr/class-kernel/doc/Events.md "Events")
+* [ClassKernel\Base\BlueObject](https://githib.com/chajr/class-kernel/doc/BlueObject.md "BlueObject and Object")
+* [ClassKernel\Base\Register](https://githib.com/chajr/class-kernel/doc/Register.md "Register")
+* [ClassKernel\Data\Xml](https://githib.com/chajr/class-kernel/doc/Xml.md "Xml")
+* [Events](https://githib.com/chajr/class-kernel/doc/Events.md "Events")
 
 Install via Composer
 --------------
@@ -27,9 +27,11 @@ way to use _ClassKernel_ is install it via Composer. To include _ClassKernel_
 libraries paste into composer json:
 
 ```json
-"require": {
-    "chajr/class-kernel": "version_number"
-},
+{
+    "require": {
+        "chajr/class-kernel": "version_number"
+    }
+}
 ```
 
 Project description
@@ -48,11 +50,10 @@ Project description
 
 Change log
 --------------
-All release version changes:
+All release version changes:  
 [Change log](https://githib.com/chajr/class-kernel/CHANGELOG.md "Change log")
 
 License
 --------------
-This bundle is released under the Apache license.
-
+This bundle is released under the Apache license.  
 [Apache license](https://githib.com/chajr/class-kernel/LICENSE "Apache license")
