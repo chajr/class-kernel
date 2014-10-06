@@ -252,6 +252,10 @@ class Register
      */
     protected static function _setClassCounter($class)
     {
+        if (!isset(self::$_classCounter[$class])) {
+            self::$_classCounter[$class] = 0;
+        }
+
         self::$_classCounter[$class] += 1;
     }
 
