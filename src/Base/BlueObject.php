@@ -184,8 +184,8 @@ trait BlueObject
 
     /**
      * allow to access DATA keys by using special methods
-     * like getSomeData() will return _DATA['some_data'] value or
-     * setSomeData('val') will create DATA['some_data'] key with 'val' value
+     * like getSomeData() will return $_DATA['some_data'] value or
+     * setSomeData('val') will create $_DATA['some_data'] key with 'val' value
      *
      * @param string $method
      * @param array $arguments
@@ -193,38 +193,42 @@ trait BlueObject
      */
     public function __call($method, $arguments)
     {
-        switch (substr($method, 0, 3)) {
-            case 'get':
+        switch (true) {
+            case substr($method, 0, 3) === 'get':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 if (isset($arguments[0])) {
                     return $this->getData($key, $arguments[0]);
                 }
                 return $this->getData($key);
 
-            case 'set':
+            case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 if (isset($arguments[0])) {
                     return $this->setData($key, $arguments[0]);
                 }
                 return $this->setData($key);
 
-            case 'has':
+            case substr($method, 0, 3) === 'has':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 return $this->hasData($key);
 
+            case substr($method, 0, 3) === 'not':
+                $key = $this->_convertKeyNames(substr($method, 3));
+                return $this->_comparator($this->getData($key), $arguments[0], '!==');
+
+            case substr($method, 0, 5) === 'unset':
+                $key = $this->_convertKeyNames(substr($method, 5));
+                return $this->unsetData($key);
+
+            case substr($method, 0, 5) === 'clear':
+                $key = $this->_convertKeyNames(substr($method, 5));
+                return $this->clearData($key);
+
+            case substr($method, 0, 2) === 'is':
+                $key = $this->_convertKeyNames(substr($method, 2));
+                return $this->_comparator($this->getData($key), $arguments[0], '===');
+
             default:
-                $methodPrefix = substr($method, 0, 5);
-
-                if ($methodPrefix === 'unset') {
-                    $key = $this->_convertKeyNames(substr($method, 5));
-                    return $this->unsetData($key);
-                }
-
-                if ($methodPrefix === 'clear') {
-                    $key = $this->_convertKeyNames(substr($method, 5));
-                    return $this->clearData($key);
-                }
-
                 $this->_errorsList['wrong_method'] = get_class($this) . ' - ' . $method;
                 $this->_hasErrors = true;
                 return false;
@@ -405,16 +409,19 @@ trait BlueObject
     }
 
     /**
-     * check that given data and data in object are the same
-     * checking by === operator
+     * check that given data and data in object with given operator
+     * use the same operator like in PHP (eg ===, !=, <, ...)
      * possibility to compare with origin data
+     * 
+     * if return null, comparator symbol was wrong
      *
      * @param mixed $dataToCheck
+     * @param string $operator
      * @param string|null $key
      * @param boolean $origin
-     * @return bool
+     * @return bool|null
      */
-    public function compareData($dataToCheck, $key = null, $origin = null)
+    public function compareData($dataToCheck, $key = null, $operator = '===', $origin = null)
     {
         if ($origin) {
             $mergedData = array_merge($this->_DATA, $this->_originalDATA);
@@ -429,18 +436,69 @@ trait BlueObject
 
         switch (true) {
             case $key === null:
-                if ($dataToCheck === $data) {
-                    return true;
+                return $this->_comparator($dataToCheck, $data, $operator);
+            // no break, always will return boolean value
+
+            default:
+                if (isset($data[$key])) {
+                    return $this->_comparator($dataToCheck, $data[$key], $operator);
                 } else {
                     return false;
                 }
             // no break, always will return boolean value
+        }
+    }
+
+    /**
+     * allow to compare data with given operator
+     * 
+     * @param mixed $dataOrigin
+     * @param mixed $dataCheck
+     * @param string $operator
+     * @return bool|null
+     */
+    protected function _comparator($dataOrigin, $dataCheck, $operator)
+    {
+        switch ($operator) {
+            case '===':
+                return $dataOrigin === $dataCheck;
+            // no break, always will return boolean value
+
+            case '!==':
+                return $dataOrigin !== $dataCheck;
+            // no break, always will return boolean value
+
+            case '==':
+                return $dataOrigin !== $dataCheck;
+            // no break, always will return boolean value
+
+            case '!=':
+            case '<>':
+                return $dataOrigin !== $dataCheck;
+            // no break, always will return boolean value
+
+            case '<':
+                return $dataOrigin < $dataCheck;
+            // no break, always will return boolean value
+
+            case '>':
+                return $dataOrigin > $dataCheck;
+            // no break, always will return boolean value
+
+            case '<=':
+                return $dataOrigin <= $dataCheck;
+            // no break, always will return boolean value
+
+            case '>=':
+                return $dataOrigin >= $dataCheck;
+            // no break, always will return boolean value
+
+            case 'instance':
+                return $dataOrigin instanceof $dataCheck;
+            // no break, always will return boolean value
+
             default:
-                if (isset($data[$key]) && $dataToCheck === $data[$key]) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return null;
             // no break, always will return boolean value
         }
     }

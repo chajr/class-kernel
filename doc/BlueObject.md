@@ -184,7 +184,15 @@ To do that use `compareData` with this attributes:
 
 1. **$dataToCheck** - it can be instance of Object, or array or value fof key
 2. **$key** - name of key to compare with (_default is null_)
-3. **$origin** - if set to `true` use original data to compare (_default is false_)
+3. **$operator** - compare operator (_default is ===_)
+4. **$origin** - if set to `true` use original data to compare (_default is false_)
+
+Available operator  to compare data `==`, `===`, `!=`, `<>`, `!==`, `<`, `>`, `<=`,
+`>=`, `instance` (_alis to instanceof_)
+
+Also there was added two magic methods to compare data with `===` and `!==` operators.
+To compare that that is the same us `is*` method, with value to be compared and
+`not*` method to check that data are different.
 
 Merge Objects
 --------------

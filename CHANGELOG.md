@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 - 
+
+### Added
+* Add is magic method [issue #18](https://github.com/chajr/class-kernel/issues/18)
+* compare objects [issue #13](https://github.com/chajr/class-kernel/issues/13)
+
 ## 0.1.1 - 2014-10-06
 
 ### Fixed
