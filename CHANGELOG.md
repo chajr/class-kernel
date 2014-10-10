@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 0.1.2 - 2014-10-10
+
+### Fixed
+* unserialize BlueObject [issue #22](https://github.com/chajr/class-kernel/issues/22)
+
 ## 0.1.1 - 2014-10-06
 
 ### Fixed
