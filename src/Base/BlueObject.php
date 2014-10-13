@@ -88,6 +88,14 @@ trait BlueObject
     protected $_separator = ', ';
 
     /**
+     * store list of rules to validate data
+     * keys are searched using regular expression
+     * 
+     * @var array
+     */
+    protected $_validationRules = [];
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -189,7 +197,7 @@ trait BlueObject
      *
      * @param string $method
      * @param array $arguments
-     * @return \ClassKernel\Data\Object|bool|mixed
+     * @return $this|bool|mixed
      */
     public function __call($method, $arguments)
     {
@@ -508,7 +516,7 @@ trait BlueObject
      * automatically set data to original array
      *
      * @param string|null $key
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function unsetData($key = null)
     {
@@ -535,7 +543,7 @@ trait BlueObject
      * set object key data to null
      *
      * @param string $key
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function clearData($key)
     {
@@ -548,7 +556,7 @@ trait BlueObject
      * set data changed to false only if restore whole data
      *
      * @param string|null $key
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function restoreData($key = null)
     {
@@ -569,7 +577,7 @@ trait BlueObject
      * this method set current DATA as original data
      * replace original data by DATA and set data changed to false
      *
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function replaceDataArrays()
     {
@@ -799,7 +807,7 @@ trait BlueObject
      * allow to join two blue objects into one
      *
      * @param \ClassKernel\Data\Object $object
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function mergeBlueObject(Object $object)
     {
@@ -831,7 +839,7 @@ trait BlueObject
      * apply given json data as object data
      *
      * @param string $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendJson($data)
     {
@@ -848,7 +856,7 @@ trait BlueObject
      * apply given xml data as object data
      *
      * @param $data string
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendSimpleXml($data)
     {
@@ -864,7 +872,7 @@ trait BlueObject
      * also handling attributes
      *
      * @param $data string
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendXml($data)
     {
@@ -964,7 +972,7 @@ trait BlueObject
      * set data given in constructor
      *
      * @param mixed $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendArray($data)
     {
@@ -981,7 +989,7 @@ trait BlueObject
      * get class variables and set them as data
      *
      * @param stdClass $class
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendStdClass(stdClass $class)
     {
@@ -995,7 +1003,7 @@ trait BlueObject
      * if data is an object set one variable where key is an object class name
      *
      * @param mixed $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendSerialized($data)
     {
@@ -1016,10 +1024,15 @@ trait BlueObject
      *
      * @param string $key
      * @param mixed $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _putData($key, $data)
     {
+        $bool = $this->_validateDataKey($key, $data);
+        if (!$bool) {
+            return $this;
+        }
+
         if (!isset($this->_originalDATA[$key])
             && isset($this->_DATA[$key])
             && !isset($this->_newKeys[$key])
@@ -1033,6 +1046,55 @@ trait BlueObject
         $this->_DATA[$key]  = $data;
 
         return $this;
+    }
+
+    /**
+     * search validation rule for given key and check data
+     * 
+     * @param string $key
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _validateDataKey($key, $data)
+    {
+        $dataOkFlag = true;
+        foreach ($this->_validationRules as $ruleKey => $ruleValue) {
+            if (!preg_match($ruleKey, $key)) {
+                continue;
+            }
+
+            $bool = $this->_validateData($ruleValue, $key, $data);
+            if (!$bool) {
+                $dataOkFlag = false;
+            }
+        }
+
+        return $dataOkFlag;
+    }
+
+    /**
+     * check data with given rule and set error information
+     * 
+     * @param string $rule
+     * @param string $key
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _validateData($rule, $key, $data)
+    {
+        if (preg_match($rule, $data)) {
+            return true;
+        }
+
+        $this->_errorsList[] = [
+            'message'   => 'validation_mismatch',
+            'key'       => $key,
+            'data'      => $data,
+            'rule'      => $rule,
+        ];
+        $this->_hasErrors = true;
+
+        return false;
     }
 
     /**
@@ -1211,6 +1273,56 @@ trait BlueObject
         }
 
         return $value;
+    }
+
+    /**
+     * set regular expression for key find and validate data
+     * 
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
+     */
+    public function putValidationRule($ruleKey, $ruleValue = null)
+    {
+        if (is_array($ruleKey)) {
+            $this->_validationRules = array_merge($this->_validationRules, $ruleKey);
+        } else {
+            $this->_validationRules[$ruleKey] = $ruleValue;
+        }
+
+        return $this;
+    }
+
+    /**
+     * remove validation rule from list
+     * 
+     * @param string $key
+     * @return $this
+     */
+    public function destroyValidationRule($key)
+    {
+        unset($this->_validationRules[$key]);
+
+        return $this;
+    }
+
+    /**
+     * return validation rule or all rules set in object
+     * 
+     * @param null|string $rule
+     * @return mixed
+     */
+    public function returnValidationRule($rule = null)
+    {
+        if (!$rule) {
+            return $this->_validationRules;
+        }
+
+        if (isset($this->_validationRules[$rule])) {
+            return $this->_validationRules[$rule];
+        }
+
+        return null;
     }
 
     /**

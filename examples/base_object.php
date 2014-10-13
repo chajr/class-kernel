@@ -59,5 +59,11 @@ require_once __DIR__ . '/../src/Data/Xml.php';
             <?php require_once __DIR__ . '/base_object/recursive.php'; ?>
         </div>
     </div>
+    <div class="example">
+        <h3>Data validation on insert</h3>
+        <div>
+            <?php require_once __DIR__ . '/base_object/data_validation.php'; ?>
+        </div>
+    </div>
 <?php
 require_once __DIR__ . '/footer.php';
