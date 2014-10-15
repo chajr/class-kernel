@@ -19,11 +19,11 @@ $validateObject->setTestInvalid(234234);
 $validateObject->setValidNew('some_data');
 $validateObject->setInvalidNew('Lorem ipsum');
 $validateObject->setSpecialKey('special_key_data');
-var_dump($validateObject->getObjectError())</pre>
+var_dump($validateObject->returnObjectError())</pre>
 </code>
 <?php $validateObject->setTestValid(22);?>
 <?php $validateObject->setTestInvalid(234234);?>
 <?php $validateObject->setValidNew('some_data');?>
 <?php $validateObject->setInvalidNew('Lorem ipsum');?>
 <?php $validateObject->setSpecialKey('special_key_data');?>
-<pre><?php var_dump($validateObject->getObjectError())?></pre>
+<pre><?php var_dump($validateObject->returnObjectError())?></pre>

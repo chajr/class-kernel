@@ -96,6 +96,20 @@ trait BlueObject
     protected $_validationRules = [];
 
     /**
+     * list of callbacks to prepare data before insert into object
+     * 
+     * @var array
+     */
+    protected $_dataPreparationCallbacks = [];
+
+    /**
+     * list of callbacks to prepare data before return from object
+     * 
+     * @var array
+     */
+    protected $_dataRetrieveCallbacks = [];
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -232,6 +246,10 @@ trait BlueObject
                 $key = $this->_convertKeyNames(substr($method, 5));
                 return $this->clearData($key);
 
+            case substr($method, 0, 7) === 'restore':
+                $key = $this->_convertKeyNames(substr($method, 7));
+                return $this->restoreData($key);
+
             case substr($method, 0, 2) === 'is':
                 $key = $this->_convertKeyNames(substr($method, 2));
                 return $this->_comparator($this->getData($key), $arguments[0], '===');
@@ -269,7 +287,7 @@ trait BlueObject
      *
      * @return bool
      */
-    public function hasErrors()
+    public function checkErrors()
     {
         return $this->_hasErrors;
     }
@@ -280,13 +298,9 @@ trait BlueObject
      * @param string $key
      * @return mixed
      */
-    public function getObjectError($key = null)
+    public function returnObjectError($key = null)
     {
-        if ($key) {
-            return $this->_errorsList[$key];
-        }
-
-        return $this->_errorsList;
+        return $this->_genericReturn($key, 'error_list');
     }
 
     /**
@@ -295,14 +309,9 @@ trait BlueObject
      * @param string|null $key
      * @return Object
      */
-    public function clearObjectError($key = null)
+    public function removeObjectError($key = null)
     {
-        if ($key) {
-            unset ($this->_errorsList[$key]);
-        }
-        $this->_errorsList = [];
-
-        return $this;
+        return $this->_genericDestroy($key, 'error_list');
     }
 
     /**
@@ -334,6 +343,7 @@ trait BlueObject
      *
      * @param null|string $key
      * @return mixed
+     * @todo apply data preparation
      */
     public function getData($key = null)
     {
@@ -378,7 +388,7 @@ trait BlueObject
      * @param null|string $key
      * @return mixed
      */
-    public function getOriginalData($key = null)
+    public function returnOriginalData($key = null)
     {
         $this->_prepareData($key);
 
@@ -710,7 +720,7 @@ trait BlueObject
      *
      * @return bool
      */
-    public function hasDataChanged()
+    public function dataChanged()
     {
         return $this->_dataChanged;
     }
@@ -724,7 +734,7 @@ trait BlueObject
     public function keyDataChanged($key)
     {
         $data           = $this->getData($key);
-        $originalData   = $this->getOriginalData($key);
+        $originalData   = $this->returnOriginalData($key);
 
         return $data != $originalData;
     }
@@ -1025,6 +1035,7 @@ trait BlueObject
      * @param string $key
      * @param mixed $data
      * @return $this
+     * @todo apply data preparation
      */
     protected function _putData($key, $data)
     {
@@ -1284,26 +1295,18 @@ trait BlueObject
      */
     public function putValidationRule($ruleKey, $ruleValue = null)
     {
-        if (is_array($ruleKey)) {
-            $this->_validationRules = array_merge($this->_validationRules, $ruleKey);
-        } else {
-            $this->_validationRules[$ruleKey] = $ruleValue;
-        }
-
-        return $this;
+        return $this->_genericPut($ruleKey, $ruleValue, 'validation');
     }
 
     /**
      * remove validation rule from list
      * 
-     * @param string $key
+     * @param string|null $key
      * @return $this
      */
-    public function destroyValidationRule($key)
+    public function destroyValidationRule($key = null)
     {
-        unset($this->_validationRules[$key]);
-
-        return $this;
+        return $this->_genericDestroy($key, 'validation');
     }
 
     /**
@@ -1314,15 +1317,182 @@ trait BlueObject
      */
     public function returnValidationRule($rule = null)
     {
-        if (!$rule) {
-            return $this->_validationRules;
+        return $this->_genericReturn($rule, 'validation');
+    }
+
+    /**
+     * common put data method for class data lists
+     * 
+     * @param string|array $key
+     * @param mixed $value
+     * @param string $type
+     * @return $this
+     */
+    protected function _genericPut($key, $value, $type)
+    {
+        $listName = $this->_getCorrectList($type);
+        if (!$listName) {
+            return $this;
         }
 
-        if (isset($this->_validationRules[$rule])) {
-            return $this->_validationRules[$rule];
+        if (is_array($key)) {
+            $this->$listName = array_merge($this->$listName, $key);
+        } else {
+            $list       = &$this->$listName;
+            $list[$key] = $value;
         }
 
-        return null;
+        return $this;
+    }
+
+    /**
+     * common destroy data method for class data lists
+     * 
+     * @param string $key
+     * @param string $type
+     * @return $this
+     */
+    protected function _genericDestroy($key, $type)
+    {
+        $listName = $this->_getCorrectList($type);
+        if (!$listName) {
+            return $this;
+        }
+
+        if ($key) {
+            $list = &$this->$listName;
+            unset ($list[$key]);
+        }
+        $this->$listName = [];
+
+        return $this;
+    }
+
+    /**
+     * common return data method for class data lists
+     * 
+     * @param string $key
+     * @param string $type
+     * @return mixed|null
+     */
+    protected function _genericReturn($key, $type)
+    {
+        $listName = $this->_getCorrectList($type);
+
+        switch (true) {
+            case !$listName:
+                return null;
+
+            case !$key:
+                return $this->$listName;
+
+            case array_key_exists($key, $this->$listName):
+                $list = &$this->$listName;
+                return $list[$key];
+
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * return name of data list variable for given data type
+     * 
+     * @param string $type
+     * @return null|string
+     */
+    protected function _getCorrectList($type)
+    {
+        switch ($type) {
+            case 'error_list':
+                $type = '_errorsList';
+                break;
+
+            case 'validation':
+                $type = '_validationRules';
+                break;
+
+            case 'preparation_callback':
+                $type = '_dataPreparationCallbacks';
+                break;
+
+            case 'return_callback':
+                $type = '_dataRetrieveCallbacks';
+                break;
+
+            default:
+                $type = null;
+        }
+
+        return $type;
+    }
+
+    /**
+     * set regular expression for key find and validate data
+     * 
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
+     */
+    public function putPreparationCallback($ruleKey, $ruleValue = null)
+    {
+        return $this->_genericPut($ruleKey, $ruleValue, 'preparation_callback');
+    }
+
+    /**
+     * remove validation rule from list
+     * 
+     * @param string|null $key
+     * @return $this
+     */
+    public function destroyPreparationCallback($key = null)
+    {
+        return $this->_genericDestroy($key, 'preparation_callback');
+    }
+
+    /**
+     * return validation rule or all rules set in object
+     * 
+     * @param null|string $rule
+     * @return mixed
+     */
+    public function returnPreparationCallback($rule = null)
+    {
+        return $this->_genericReturn($rule, 'preparation_callback');
+    }
+
+    /**
+     * set regular expression for key find and validate data
+     * 
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
+     */
+    public function putReturnCallback($ruleKey, $ruleValue = null)
+    {
+        return $this->_genericPut($ruleKey, $ruleValue, 'return_callback');
+    }
+
+    /**
+     * remove validation rule from list
+     * 
+     * @param string|null $key
+     * @return $this
+     */
+    public function destroyReturnCallback($key = null)
+    {
+        return $this->_genericReturn($key, 'return_callback');
+    }
+
+    /**
+     * return validation rule or all rules set in object
+     * 
+     * @param null|string $rule
+     * @return mixed
+     */
+    public function returnReturnCallback($rule = null)
+    {
+        return $this->_genericReturn($rule, 'return_callback');
     }
 
     /**
