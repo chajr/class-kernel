@@ -343,21 +343,21 @@ trait BlueObject
      *
      * @param null|string $key
      * @return mixed
-     * @todo apply data preparation
      */
     public function getData($key = null)
     {
         $this->_prepareData($key);
+        $data = null;
 
         if (!$key) {
-            return $this->_DATA;
+            $data = $this->_DATA;
         }
 
         if (isset($this->_DATA[$key])) {
-            return $this->_DATA[$key];
+            $data = $this->_DATA[$key];
         }
 
-        return null;
+        return $this->_dataPreparation($key, $data, $this->_dataRetrieveCallbacks);
     }
 
     /**
@@ -742,18 +742,16 @@ trait BlueObject
     /**
      * allow to use given method or function for all data inside of object
      *
-     * @param string $method
+     * @param array|string|\Closure $function
      * @param mixed $methodAttributes
      * @param mixed $data
-     * @param bool $function
      * @param bool $recursive
      * @return array|null
      */
     public function traveler(
-        $method,
+        $function,
         $methodAttributes = null,
         $data = null,
-        $function = false,
         $recursive = false
     ) {
         if (!$data) {
@@ -764,9 +762,9 @@ trait BlueObject
             $isRecursive = is_array($value) && $recursive;
 
             if ($isRecursive) {
-                $data[$key] = $this->_recursiveTraveler($method, $methodAttributes, $value, $function);
+                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value, true);
             } else {
-                $data[$key] = $this->_callUserFunction($function, $method, $key, $value, $methodAttributes);
+                $data[$key] = $this->_callUserFunction($function, $key, $value, $methodAttributes);
             }
         }
 
@@ -776,19 +774,18 @@ trait BlueObject
     /**
      * allow to change some data in multi level arrays
      *
-     * @param string $method
      * @param mixed $methodAttributes
      * @param mixed $data
-     * @param string|boolean $function
+     * @param array|string|\Closure $function
      * @return mixed
      */
-    protected function _recursiveTraveler($method, $methodAttributes, $data, $function)
+    protected function _recursiveTraveler($function, $methodAttributes, $data)
     {
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                $data[$key] = $this->_recursiveTraveler($method, $methodAttributes, $value, $function);
+                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value);
             } else {
-                $data[$key] = $this->_callUserFunction($function, $method, $key, $value, $methodAttributes);
+                $data[$key] = $this->_callUserFunction($function, $key, $value, $methodAttributes);
             }
         }
 
@@ -796,21 +793,21 @@ trait BlueObject
     }
 
     /**
-     * run given function or method on given data
+     * run given function, method or closure on given data
      *
-     * @param string|boolean $function
-     * @param string $method
+     * @param array|string|\Closure $function
      * @param string $key
      * @param mixed $value
-     * @param mixed $methodAttributes
+     * @param mixed $attributes
      * @return mixed
      */
-    protected function _callUserFunction($function, $method, $key, $value, $methodAttributes)
+    protected function _callUserFunction($function, $key, $value, $attributes)
     {
-        if ($function) {
-            return call_user_func($method, $key, $value, $this, $methodAttributes);
+        if (is_callable($function)) {
+            return call_user_func_array($function, [$key, $value, $this, $attributes]);
         }
-        return $this->$method($key, $value, $methodAttributes);
+
+        return $value;
     }
 
     /**
@@ -1035,7 +1032,6 @@ trait BlueObject
      * @param string $key
      * @param mixed $data
      * @return $this
-     * @todo apply data preparation
      */
     protected function _putData($key, $data)
     {
@@ -1054,7 +1050,11 @@ trait BlueObject
         }
 
         $this->_dataChanged = true;
-        $this->_DATA[$key]  = $data;
+        $this->_DATA[$key]  = $this->_dataPreparation(
+            $key,
+            $data,
+            $this->_dataPreparationCallbacks
+        );
 
         return $this;
     }
@@ -1425,6 +1425,27 @@ trait BlueObject
         }
 
         return $type;
+    }
+
+    /**
+     * return data formatted by given function
+     * 
+     * @param string $key
+     * @param mixed $data
+     * @param array $rulesList
+     * @return mixed
+     */
+    protected function _dataPreparation($key, $data, array $rulesList)
+    {
+        foreach ($rulesList as $ruleKey => $function) {
+            if (!preg_match($ruleKey, $key)) {
+                continue;
+            }
+
+            $data = $this->_callUserFunction($function, $key, $data, null);
+        }
+
+        return $data;
     }
 
     /**
