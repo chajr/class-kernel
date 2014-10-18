@@ -30,6 +30,12 @@ require_once __DIR__ . '/../src/Data/Xml.php';
         </div>
     </div>
     <div class="example">
+        <h3>Data preparation (gat and set)</h3>
+        <div>
+            <?php require_once __DIR__ . '/base_object/data_preparation.php'; ?>
+        </div>
+    </div>
+    <div class="example">
         <h3>Export data</h3>
         <div>
             <?php require_once __DIR__ . '/base_object/export_data.php'; ?>
