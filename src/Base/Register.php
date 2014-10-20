@@ -6,7 +6,7 @@
  * @subpackage  Base
  * @author      Michał Adamiak    <chajr@bluetree.pl>
  * @copyright   chajr/bluetree
- * @link https://github.com/chajr/class-kernel/wiki/ClassKernel%5CBase%5CRegister Register class documentation
+ * @link https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_Register Register class documentation
  */
 namespace ClassKernel\Base;
 
