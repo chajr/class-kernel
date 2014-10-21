@@ -71,5 +71,11 @@ require_once __DIR__ . '/../src/Data/Xml.php';
             <?php require_once __DIR__ . '/base_object/data_validation.php'; ?>
         </div>
     </div>
+    <div class="example">
+        <h3>Object as array</h3>
+        <div>
+            <?php require_once __DIR__ . '/base_object/array_access.php'; ?>
+        </div>
+    </div>
 <?php
 require_once __DIR__ . '/footer.php';

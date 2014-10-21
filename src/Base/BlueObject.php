@@ -110,6 +110,14 @@ trait BlueObject
     protected $_dataRetrieveCallbacks = [];
 
     /**
+     * for array access numeric keys, store last used numeric index
+     * used only in case when object is used as array
+     * 
+     * @var int
+     */
+    protected $_integerKeysCounter = 0;
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -336,6 +344,23 @@ trait BlueObject
         }
 
         return serialize($temporaryData);
+    }
+
+    /**
+     * allow to set data from serialized string with keep original data
+     * 
+     * @param string $string
+     * @return $this
+     */
+    public function unserialize($string)
+    {
+        $this->unsetData();
+        $this->__construct([
+            'data'  => $string,
+            'type'  => 'serialized'
+        ]);
+
+        return $this;
     }
 
     /**
@@ -1514,6 +1539,111 @@ trait BlueObject
     public function returnReturnCallback($rule = null)
     {
         return $this->_genericReturn($rule, 'return_callback');
+    }
+
+    /**
+     * check that data for given key exists
+     * 
+     * @param string $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return $this->hasData($offset);
+    }
+
+    /**
+     * return data for given key
+     * 
+     * @param string $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->getData($offset);
+    }
+
+    /**
+     * set data for given key
+     * 
+     * @param string|null $offset
+     * @param mixed $value
+     * @return $this
+     */
+    public function offsetSet($offset, $value)
+    {
+        if (is_null($offset)) {
+            $offset = $this->_integerToStringKey($this->_integerKeysCounter++);
+        }
+
+        $this->_putData($offset, $value);
+        return $this;
+    }
+
+    /**
+     * remove data for given key
+     * 
+     * @param string $offset
+     * @return $this
+     */
+    public function offsetUnset($offset)
+    {
+        $this->unsetData($offset);
+        return $this;
+    }
+
+    /**
+     * return the current element in an array
+     * handle data preparation
+     * 
+     * @return mixed
+     */
+    public function current()
+    {
+        current($this->_DATA);
+        return $this->getData($this->key());
+    }
+
+    /**
+     * return the current element in an array
+     * 
+     * @return mixed
+     */
+    public function key()
+    {
+        return key($this->_DATA);
+    }
+
+    /**
+     * advance the internal array pointer of an array
+     * handle data preparation
+     * 
+     * @return mixed
+     */
+    public function next()
+    {
+        next($this->_DATA);
+        return $this->getData($this->key());
+    }
+
+    /**
+     * rewind the position of a file pointer
+     * 
+     * @return mixed
+     */
+    public function rewind()
+    {
+        return reset($this->_DATA);
+    }
+
+    /**
+     * checks if current position is valid
+     * 
+     * @return bool
+     */
+    public function valid()
+    {
+        return key($this->_DATA) !== null;
     }
 
     /**

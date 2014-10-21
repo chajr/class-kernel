@@ -11,8 +11,11 @@
 namespace ClassKernel\Data;
 
 use ClassKernel\Base\BlueObject;
+use Serializable;
+use ArrayAccess;
+use Iterator;
 
-class Object
+class Object implements Serializable, ArrayAccess, Iterator
 {
     use BlueObject;
 }
