@@ -51,9 +51,9 @@ Project description
 Change log
 --------------
 All release version changes:  
-[Change log](https://githib.com/chajr/class-kernel/CHANGELOG.md "Change log")
+[Change log](https://github.com/chajr/class-kernel/CHANGELOG.md "Change log")
 
 License
 --------------
 This bundle is released under the Apache license.  
-[Apache license](https://githib.com/chajr/class-kernel/LICENSE "Apache license")
+[Apache license](https://github.com/chajr/class-kernel/LICENSE "Apache license")
