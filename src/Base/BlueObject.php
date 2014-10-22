@@ -1043,7 +1043,7 @@ trait BlueObject
         if (is_object($data)) {
             $this->_DATA[get_class($data)] = $data;
         } else {
-            $this->_DATA = unserialize($data);
+            $this->_DATA = $data;
         }
 
         return $this;
