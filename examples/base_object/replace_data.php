@@ -30,15 +30,15 @@ var_dump($objectArray->keyDataChanged('third_data'));</pre>
 <code>
 <pre>$objectArray->setFirstData(1);
 $objectArray->setSecondData(2);
-echo $object->getOriginalData('second_data');
-echo $object->getOriginalData('first_data');
-var_dump($objectArray->getOriginalData());</pre>
+echo $object->returnOriginalData('second_data');
+echo $object->returnOriginalData('first_data');
+var_dump($objectArray->returnOriginalData());</pre>
 </code>
 <?php $objectArray->setFirstData(1);?>
 <?php $objectArray->setSecondData(2);?>
-<pre><?php echo $objectArray->getOriginalData('second_data');?></pre>
-<pre><?php echo $objectArray->getOriginalData('first_data');?></pre>
-<pre><?php var_dump($objectArray->getOriginalData());?></pre>
+<pre><?php echo $objectArray->returnOriginalData('second_data');?></pre>
+<pre><?php echo $objectArray->returnOriginalData('first_data');?></pre>
+<pre><?php var_dump($objectArray->returnOriginalData());?></pre>
 
 <h5>Restore data for single key</h5>
 <code>
@@ -61,13 +61,13 @@ var_dump($objectArray->getData());</pre>
 <pre>$objectArray->setFirstData(1);
 $objectArray->setSecondData(2);
 $objectArray->replaceDataArrays()
-var_dump($objectArray->hasDataChanged());
+var_dump($objectArray->dataChanged());
 var_dump($objectArray->getData());
-var_dump($objectArray->getOriginalData());</pre>
+var_dump($objectArray->returnOriginalData());</pre>
 </code>
 <?php $objectArray->setFirstData(1);?>
 <?php $objectArray->setSecondData(2);?>
 <?php $objectArray->replaceDataArrays()?>
-<pre><?php var_dump($objectArray->hasDataChanged());?></pre>
+<pre><?php var_dump($objectArray->dataChanged());?></pre>
 <pre><?php var_dump($objectArray->getData());?></pre>
-<pre><?php var_dump($objectArray->getOriginalData());?></pre>
+<pre><?php var_dump($objectArray->returnOriginalData());?></pre>

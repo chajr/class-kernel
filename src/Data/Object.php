@@ -6,13 +6,16 @@
  * @subpackage  Data
  * @author      Michał Adamiak    <chajr@bluetree.pl>
  * @copyright   chajr/bluetree
- * @link https://github.com/chajr/class-kernel/doc/BlueObject.md Object class documentation
+ * @link https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_BlueObject Object class documentation
  */
 namespace ClassKernel\Data;
 
 use ClassKernel\Base\BlueObject;
+use Serializable;
+use ArrayAccess;
+use Iterator;
 
-class Object
+class Object implements Serializable, ArrayAccess, Iterator
 {
     use BlueObject;
 }

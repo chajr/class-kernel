@@ -6,12 +6,13 @@
  * @subpackage  Base
  * @author      Michał Adamiak    <chajr@bluetree.pl>
  * @copyright   chajr/bluetree
- * @link https://github.com/chajr/class-kernel/doc/Register.md Register class documentation
+ * @link https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_Register Register class documentation
  */
 namespace ClassKernel\Base;
 
 use ClassKernel\Data\Object;
 use Exception;
+use ReflectionClass;
 
 class Register
 {
@@ -66,13 +67,14 @@ class Register
     }
 
     /**
-     * try to create new object and return it
+     * try to create new object and return it, or return object ReflectionClass instance
      *
      * @param string $name
      * @param array $args
+     * @param bool $reflection
      * @return mixed
      */
-    public static function getObject($name, $args = [])
+    public static function getObject($name, $args = [], $reflection = false)
     {
         self::tracer('getObject', debug_backtrace(), '006c94');
         self::callEvent('register_get_object_before', [&$name, &$args]);
@@ -92,6 +94,10 @@ class Register
 
         if ($object) {
             self::_setClassCounter(self::name2code($name));
+        }
+
+        if ($reflection) {
+            $object = new ReflectionClass($object);
         }
 
         self::callEvent('register_get_object_after', [$name, $args, $object]);
@@ -220,15 +226,21 @@ class Register
     }
 
     /**
-     * return list of registered objects with their codes
+     * return list of singletons ReflectionClass instances
+     * or ReflectionClass for given singleton code
      *
+     * @param string|null $singletonKey
      * @return array
      */
-    public static function getRegisteredObjects()
+    public static function getRegisteredObjects($singletonKey = null)
     {
+        if ($singletonKey && self::$_singletons->hasData($singletonKey)) {
+            return new ReflectionClass(self::$_singletons->getData($singletonKey));
+        }
+
         $list = [];
         foreach (self::$_singletons->getData() as $name => $class) {
-            $list[$name] = get_class($class);
+            $list[$name] = new ReflectionClass($class);
         }
 
         return $list;

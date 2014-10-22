@@ -6,7 +6,7 @@
  * @subpackage  Data
  * @author      Michał Adamiak    <chajr@bluetree.pl>
  * @copyright   chajr/bluetree
- * @link https://github.com/chajr/class-kernel/doc/Xml.md Xml class documentation
+ * @link https://github.com/chajr/class-kernel/wiki/ClassKernel_Data_Xml Xml class documentation
  */
 namespace ClassKernel\Data;
 

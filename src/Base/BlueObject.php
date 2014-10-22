@@ -6,7 +6,7 @@
  * @subpackage  Base
  * @author      Michał Adamiak    <chajr@bluetree.pl>
  * @copyright   chajr/bluetree
- * @link https://github.com/chajr/class-kernel/doc/BlueObject.md BlueObject class documentation
+ * @link https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_BlueObject BlueObject class documentation
  */
 namespace ClassKernel\Base;
 
@@ -86,6 +86,36 @@ trait BlueObject
      * @var string
      */
     protected $_separator = ', ';
+
+    /**
+     * store list of rules to validate data
+     * keys are searched using regular expression
+     * 
+     * @var array
+     */
+    protected $_validationRules = [];
+
+    /**
+     * list of callbacks to prepare data before insert into object
+     * 
+     * @var array
+     */
+    protected $_dataPreparationCallbacks = [];
+
+    /**
+     * list of callbacks to prepare data before return from object
+     * 
+     * @var array
+     */
+    protected $_dataRetrieveCallbacks = [];
+
+    /**
+     * for array access numeric keys, store last used numeric index
+     * used only in case when object is used as array
+     * 
+     * @var int
+     */
+    protected $_integerKeysCounter = 0;
 
     /**
      * create new Blue Object, optionally with some data
@@ -184,47 +214,55 @@ trait BlueObject
 
     /**
      * allow to access DATA keys by using special methods
-     * like getSomeData() will return _DATA['some_data'] value or
-     * setSomeData('val') will create DATA['some_data'] key with 'val' value
+     * like getSomeData() will return $_DATA['some_data'] value or
+     * setSomeData('val') will create $_DATA['some_data'] key with 'val' value
      *
      * @param string $method
      * @param array $arguments
-     * @return \ClassKernel\Data\Object|bool|mixed
+     * @return $this|bool|mixed
      */
     public function __call($method, $arguments)
     {
-        switch (substr($method, 0, 3)) {
-            case 'get':
+        switch (true) {
+            case substr($method, 0, 3) === 'get':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 if (isset($arguments[0])) {
                     return $this->getData($key, $arguments[0]);
                 }
                 return $this->getData($key);
 
-            case 'set':
+            case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 if (isset($arguments[0])) {
                     return $this->setData($key, $arguments[0]);
                 }
                 return $this->setData($key);
 
-            case 'has':
+            case substr($method, 0, 3) === 'has':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 return $this->hasData($key);
 
+            case substr($method, 0, 3) === 'not':
+                $key = $this->_convertKeyNames(substr($method, 3));
+                return $this->_comparator($this->getData($key), $arguments[0], '!==');
+
+            case substr($method, 0, 5) === 'unset':
+                $key = $this->_convertKeyNames(substr($method, 5));
+                return $this->unsetData($key);
+
+            case substr($method, 0, 5) === 'clear':
+                $key = $this->_convertKeyNames(substr($method, 5));
+                return $this->clearData($key);
+
+            case substr($method, 0, 7) === 'restore':
+                $key = $this->_convertKeyNames(substr($method, 7));
+                return $this->restoreData($key);
+
+            case substr($method, 0, 2) === 'is':
+                $key = $this->_convertKeyNames(substr($method, 2));
+                return $this->_comparator($this->getData($key), $arguments[0], '===');
+
             default:
-                $methodPrefix = substr($method, 0, 5);
-
-                if ($methodPrefix === 'unset') {
-                    $key = $this->_convertKeyNames(substr($method, 5));
-                    return $this->unsetData($key);
-                }
-
-                if ($methodPrefix === 'clear') {
-                    $key = $this->_convertKeyNames(substr($method, 5));
-                    return $this->clearData($key);
-                }
-
                 $this->_errorsList['wrong_method'] = get_class($this) . ' - ' . $method;
                 $this->_hasErrors = true;
                 return false;
@@ -257,7 +295,7 @@ trait BlueObject
      *
      * @return bool
      */
-    public function hasErrors()
+    public function checkErrors()
     {
         return $this->_hasErrors;
     }
@@ -268,13 +306,9 @@ trait BlueObject
      * @param string $key
      * @return mixed
      */
-    public function getObjectError($key = null)
+    public function returnObjectError($key = null)
     {
-        if ($key) {
-            return $this->_errorsList[$key];
-        }
-
-        return $this->_errorsList;
+        return $this->_genericReturn($key, 'error_list');
     }
 
     /**
@@ -283,14 +317,9 @@ trait BlueObject
      * @param string|null $key
      * @return Object
      */
-    public function clearObjectError($key = null)
+    public function removeObjectError($key = null)
     {
-        if ($key) {
-            unset ($this->_errorsList[$key]);
-        }
-        $this->_errorsList = [];
-
-        return $this;
+        return $this->_genericDestroy($key, 'error_list');
     }
 
     /**
@@ -318,6 +347,23 @@ trait BlueObject
     }
 
     /**
+     * allow to set data from serialized string with keep original data
+     * 
+     * @param string $string
+     * @return $this
+     */
+    public function unserialize($string)
+    {
+        $this->unsetData();
+        $this->__construct([
+            'data'  => $string,
+            'type'  => 'serialized'
+        ]);
+
+        return $this;
+    }
+
+    /**
      * return data for given key if exist in object, or all object data
      *
      * @param null|string $key
@@ -326,16 +372,17 @@ trait BlueObject
     public function getData($key = null)
     {
         $this->_prepareData($key);
+        $data = null;
 
         if (!$key) {
-            return $this->_DATA;
+            $data = $this->_DATA;
         }
 
         if (isset($this->_DATA[$key])) {
-            return $this->_DATA[$key];
+            $data = $this->_DATA[$key];
         }
 
-        return null;
+        return $this->_dataPreparation($key, $data, $this->_dataRetrieveCallbacks);
     }
 
     /**
@@ -366,7 +413,7 @@ trait BlueObject
      * @param null|string $key
      * @return mixed
      */
-    public function getOriginalData($key = null)
+    public function returnOriginalData($key = null)
     {
         $this->_prepareData($key);
 
@@ -405,16 +452,19 @@ trait BlueObject
     }
 
     /**
-     * check that given data and data in object are the same
-     * checking by === operator
+     * check that given data and data in object with given operator
+     * use the same operator like in PHP (eg ===, !=, <, ...)
      * possibility to compare with origin data
+     * 
+     * if return null, comparator symbol was wrong
      *
      * @param mixed $dataToCheck
+     * @param string $operator
      * @param string|null $key
      * @param boolean $origin
-     * @return bool
+     * @return bool|null
      */
-    public function compareData($dataToCheck, $key = null, $origin = null)
+    public function compareData($dataToCheck, $key = null, $operator = '===', $origin = null)
     {
         if ($origin) {
             $mergedData = array_merge($this->_DATA, $this->_originalDATA);
@@ -429,18 +479,69 @@ trait BlueObject
 
         switch (true) {
             case $key === null:
-                if ($dataToCheck === $data) {
-                    return true;
+                return $this->_comparator($dataToCheck, $data, $operator);
+            // no break, always will return boolean value
+
+            default:
+                if (isset($data[$key])) {
+                    return $this->_comparator($dataToCheck, $data[$key], $operator);
                 } else {
                     return false;
                 }
             // no break, always will return boolean value
+        }
+    }
+
+    /**
+     * allow to compare data with given operator
+     * 
+     * @param mixed $dataOrigin
+     * @param mixed $dataCheck
+     * @param string $operator
+     * @return bool|null
+     */
+    protected function _comparator($dataOrigin, $dataCheck, $operator)
+    {
+        switch ($operator) {
+            case '===':
+                return $dataOrigin === $dataCheck;
+            // no break, always will return boolean value
+
+            case '!==':
+                return $dataOrigin !== $dataCheck;
+            // no break, always will return boolean value
+
+            case '==':
+                return $dataOrigin !== $dataCheck;
+            // no break, always will return boolean value
+
+            case '!=':
+            case '<>':
+                return $dataOrigin !== $dataCheck;
+            // no break, always will return boolean value
+
+            case '<':
+                return $dataOrigin < $dataCheck;
+            // no break, always will return boolean value
+
+            case '>':
+                return $dataOrigin > $dataCheck;
+            // no break, always will return boolean value
+
+            case '<=':
+                return $dataOrigin <= $dataCheck;
+            // no break, always will return boolean value
+
+            case '>=':
+                return $dataOrigin >= $dataCheck;
+            // no break, always will return boolean value
+
+            case 'instance':
+                return $dataOrigin instanceof $dataCheck;
+            // no break, always will return boolean value
+
             default:
-                if (isset($data[$key]) && $dataToCheck === $data[$key]) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return null;
             // no break, always will return boolean value
         }
     }
@@ -450,7 +551,7 @@ trait BlueObject
      * automatically set data to original array
      *
      * @param string|null $key
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function unsetData($key = null)
     {
@@ -477,7 +578,7 @@ trait BlueObject
      * set object key data to null
      *
      * @param string $key
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function clearData($key)
     {
@@ -490,7 +591,7 @@ trait BlueObject
      * set data changed to false only if restore whole data
      *
      * @param string|null $key
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function restoreData($key = null)
     {
@@ -511,7 +612,7 @@ trait BlueObject
      * this method set current DATA as original data
      * replace original data by DATA and set data changed to false
      *
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function replaceDataArrays()
     {
@@ -644,7 +745,7 @@ trait BlueObject
      *
      * @return bool
      */
-    public function hasDataChanged()
+    public function dataChanged()
     {
         return $this->_dataChanged;
     }
@@ -658,7 +759,7 @@ trait BlueObject
     public function keyDataChanged($key)
     {
         $data           = $this->getData($key);
-        $originalData   = $this->getOriginalData($key);
+        $originalData   = $this->returnOriginalData($key);
 
         return $data != $originalData;
     }
@@ -666,18 +767,16 @@ trait BlueObject
     /**
      * allow to use given method or function for all data inside of object
      *
-     * @param string $method
+     * @param array|string|\Closure $function
      * @param mixed $methodAttributes
      * @param mixed $data
-     * @param bool $function
      * @param bool $recursive
      * @return array|null
      */
     public function traveler(
-        $method,
+        $function,
         $methodAttributes = null,
         $data = null,
-        $function = false,
         $recursive = false
     ) {
         if (!$data) {
@@ -688,9 +787,9 @@ trait BlueObject
             $isRecursive = is_array($value) && $recursive;
 
             if ($isRecursive) {
-                $data[$key] = $this->_recursiveTraveler($method, $methodAttributes, $value, $function);
+                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value, true);
             } else {
-                $data[$key] = $this->_callUserFunction($function, $method, $key, $value, $methodAttributes);
+                $data[$key] = $this->_callUserFunction($function, $key, $value, $methodAttributes);
             }
         }
 
@@ -700,19 +799,18 @@ trait BlueObject
     /**
      * allow to change some data in multi level arrays
      *
-     * @param string $method
      * @param mixed $methodAttributes
      * @param mixed $data
-     * @param string|boolean $function
+     * @param array|string|\Closure $function
      * @return mixed
      */
-    protected function _recursiveTraveler($method, $methodAttributes, $data, $function)
+    protected function _recursiveTraveler($function, $methodAttributes, $data)
     {
         foreach ($data as $key => $value) {
             if (is_array($value)) {
-                $data[$key] = $this->_recursiveTraveler($method, $methodAttributes, $value, $function);
+                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value);
             } else {
-                $data[$key] = $this->_callUserFunction($function, $method, $key, $value, $methodAttributes);
+                $data[$key] = $this->_callUserFunction($function, $key, $value, $methodAttributes);
             }
         }
 
@@ -720,28 +818,28 @@ trait BlueObject
     }
 
     /**
-     * run given function or method on given data
+     * run given function, method or closure on given data
      *
-     * @param string|boolean $function
-     * @param string $method
+     * @param array|string|\Closure $function
      * @param string $key
      * @param mixed $value
-     * @param mixed $methodAttributes
+     * @param mixed $attributes
      * @return mixed
      */
-    protected function _callUserFunction($function, $method, $key, $value, $methodAttributes)
+    protected function _callUserFunction($function, $key, $value, $attributes)
     {
-        if ($function) {
-            return call_user_func($method, $key, $value, $this, $methodAttributes);
+        if (is_callable($function)) {
+            return call_user_func_array($function, [$key, $value, $this, $attributes]);
         }
-        return $this->$method($key, $value, $methodAttributes);
+
+        return $value;
     }
 
     /**
      * allow to join two blue objects into one
      *
      * @param \ClassKernel\Data\Object $object
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     public function mergeBlueObject(Object $object)
     {
@@ -773,7 +871,7 @@ trait BlueObject
      * apply given json data as object data
      *
      * @param string $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendJson($data)
     {
@@ -790,7 +888,7 @@ trait BlueObject
      * apply given xml data as object data
      *
      * @param $data string
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendSimpleXml($data)
     {
@@ -806,7 +904,7 @@ trait BlueObject
      * also handling attributes
      *
      * @param $data string
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendXml($data)
     {
@@ -906,7 +1004,7 @@ trait BlueObject
      * set data given in constructor
      *
      * @param mixed $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendArray($data)
     {
@@ -923,7 +1021,7 @@ trait BlueObject
      * get class variables and set them as data
      *
      * @param stdClass $class
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendStdClass(stdClass $class)
     {
@@ -937,7 +1035,7 @@ trait BlueObject
      * if data is an object set one variable where key is an object class name
      *
      * @param mixed $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _appendSerialized($data)
     {
@@ -958,10 +1056,15 @@ trait BlueObject
      *
      * @param string $key
      * @param mixed $data
-     * @return \ClassKernel\Data\Object
+     * @return $this
      */
     protected function _putData($key, $data)
     {
+        $bool = $this->_validateDataKey($key, $data);
+        if (!$bool) {
+            return $this;
+        }
+
         if (!isset($this->_originalDATA[$key])
             && isset($this->_DATA[$key])
             && !isset($this->_newKeys[$key])
@@ -972,9 +1075,62 @@ trait BlueObject
         }
 
         $this->_dataChanged = true;
-        $this->_DATA[$key]  = $data;
+        $this->_DATA[$key]  = $this->_dataPreparation(
+            $key,
+            $data,
+            $this->_dataPreparationCallbacks
+        );
 
         return $this;
+    }
+
+    /**
+     * search validation rule for given key and check data
+     * 
+     * @param string $key
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _validateDataKey($key, $data)
+    {
+        $dataOkFlag = true;
+        foreach ($this->_validationRules as $ruleKey => $ruleValue) {
+            if (!preg_match($ruleKey, $key)) {
+                continue;
+            }
+
+            $bool = $this->_validateData($ruleValue, $key, $data);
+            if (!$bool) {
+                $dataOkFlag = false;
+            }
+        }
+
+        return $dataOkFlag;
+    }
+
+    /**
+     * check data with given rule and set error information
+     * 
+     * @param string $rule
+     * @param string $key
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _validateData($rule, $key, $data)
+    {
+        if (preg_match($rule, $data)) {
+            return true;
+        }
+
+        $this->_errorsList[] = [
+            'message'   => 'validation_mismatch',
+            'key'       => $key,
+            'data'      => $data,
+            'rule'      => $rule,
+        ];
+        $this->_hasErrors = true;
+
+        return false;
     }
 
     /**
@@ -1153,6 +1309,341 @@ trait BlueObject
         }
 
         return $value;
+    }
+
+    /**
+     * set regular expression for key find and validate data
+     * 
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
+     */
+    public function putValidationRule($ruleKey, $ruleValue = null)
+    {
+        return $this->_genericPut($ruleKey, $ruleValue, 'validation');
+    }
+
+    /**
+     * remove validation rule from list
+     * 
+     * @param string|null $key
+     * @return $this
+     */
+    public function destroyValidationRule($key = null)
+    {
+        return $this->_genericDestroy($key, 'validation');
+    }
+
+    /**
+     * return validation rule or all rules set in object
+     * 
+     * @param null|string $rule
+     * @return mixed
+     */
+    public function returnValidationRule($rule = null)
+    {
+        return $this->_genericReturn($rule, 'validation');
+    }
+
+    /**
+     * common put data method for class data lists
+     * 
+     * @param string|array $key
+     * @param mixed $value
+     * @param string $type
+     * @return $this
+     */
+    protected function _genericPut($key, $value, $type)
+    {
+        $listName = $this->_getCorrectList($type);
+        if (!$listName) {
+            return $this;
+        }
+
+        if (is_array($key)) {
+            $this->$listName = array_merge($this->$listName, $key);
+        } else {
+            $list       = &$this->$listName;
+            $list[$key] = $value;
+        }
+
+        return $this;
+    }
+
+    /**
+     * common destroy data method for class data lists
+     * 
+     * @param string $key
+     * @param string $type
+     * @return $this
+     */
+    protected function _genericDestroy($key, $type)
+    {
+        $listName = $this->_getCorrectList($type);
+        if (!$listName) {
+            return $this;
+        }
+
+        if ($key) {
+            $list = &$this->$listName;
+            unset ($list[$key]);
+        }
+        $this->$listName = [];
+
+        return $this;
+    }
+
+    /**
+     * common return data method for class data lists
+     * 
+     * @param string $key
+     * @param string $type
+     * @return mixed|null
+     */
+    protected function _genericReturn($key, $type)
+    {
+        $listName = $this->_getCorrectList($type);
+
+        switch (true) {
+            case !$listName:
+                return null;
+
+            case !$key:
+                return $this->$listName;
+
+            case array_key_exists($key, $this->$listName):
+                $list = &$this->$listName;
+                return $list[$key];
+
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * return name of data list variable for given data type
+     * 
+     * @param string $type
+     * @return null|string
+     */
+    protected function _getCorrectList($type)
+    {
+        switch ($type) {
+            case 'error_list':
+                $type = '_errorsList';
+                break;
+
+            case 'validation':
+                $type = '_validationRules';
+                break;
+
+            case 'preparation_callback':
+                $type = '_dataPreparationCallbacks';
+                break;
+
+            case 'return_callback':
+                $type = '_dataRetrieveCallbacks';
+                break;
+
+            default:
+                $type = null;
+        }
+
+        return $type;
+    }
+
+    /**
+     * return data formatted by given function
+     * 
+     * @param string $key
+     * @param mixed $data
+     * @param array $rulesList
+     * @return mixed
+     */
+    protected function _dataPreparation($key, $data, array $rulesList)
+    {
+        foreach ($rulesList as $ruleKey => $function) {
+            if (!preg_match($ruleKey, $key)) {
+                continue;
+            }
+
+            $data = $this->_callUserFunction($function, $key, $data, null);
+        }
+
+        return $data;
+    }
+
+    /**
+     * set regular expression for key find and validate data
+     * 
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
+     */
+    public function putPreparationCallback($ruleKey, $ruleValue = null)
+    {
+        return $this->_genericPut($ruleKey, $ruleValue, 'preparation_callback');
+    }
+
+    /**
+     * remove validation rule from list
+     * 
+     * @param string|null $key
+     * @return $this
+     */
+    public function destroyPreparationCallback($key = null)
+    {
+        return $this->_genericDestroy($key, 'preparation_callback');
+    }
+
+    /**
+     * return validation rule or all rules set in object
+     * 
+     * @param null|string $rule
+     * @return mixed
+     */
+    public function returnPreparationCallback($rule = null)
+    {
+        return $this->_genericReturn($rule, 'preparation_callback');
+    }
+
+    /**
+     * set regular expression for key find and validate data
+     * 
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
+     */
+    public function putReturnCallback($ruleKey, $ruleValue = null)
+    {
+        return $this->_genericPut($ruleKey, $ruleValue, 'return_callback');
+    }
+
+    /**
+     * remove validation rule from list
+     * 
+     * @param string|null $key
+     * @return $this
+     */
+    public function destroyReturnCallback($key = null)
+    {
+        return $this->_genericReturn($key, 'return_callback');
+    }
+
+    /**
+     * return validation rule or all rules set in object
+     * 
+     * @param null|string $rule
+     * @return mixed
+     */
+    public function returnReturnCallback($rule = null)
+    {
+        return $this->_genericReturn($rule, 'return_callback');
+    }
+
+    /**
+     * check that data for given key exists
+     * 
+     * @param string $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return $this->hasData($offset);
+    }
+
+    /**
+     * return data for given key
+     * 
+     * @param string $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->getData($offset);
+    }
+
+    /**
+     * set data for given key
+     * 
+     * @param string|null $offset
+     * @param mixed $value
+     * @return $this
+     */
+    public function offsetSet($offset, $value)
+    {
+        if (is_null($offset)) {
+            $offset = $this->_integerToStringKey($this->_integerKeysCounter++);
+        }
+
+        $this->_putData($offset, $value);
+        return $this;
+    }
+
+    /**
+     * remove data for given key
+     * 
+     * @param string $offset
+     * @return $this
+     */
+    public function offsetUnset($offset)
+    {
+        $this->unsetData($offset);
+        return $this;
+    }
+
+    /**
+     * return the current element in an array
+     * handle data preparation
+     * 
+     * @return mixed
+     */
+    public function current()
+    {
+        current($this->_DATA);
+        return $this->getData($this->key());
+    }
+
+    /**
+     * return the current element in an array
+     * 
+     * @return mixed
+     */
+    public function key()
+    {
+        return key($this->_DATA);
+    }
+
+    /**
+     * advance the internal array pointer of an array
+     * handle data preparation
+     * 
+     * @return mixed
+     */
+    public function next()
+    {
+        next($this->_DATA);
+        return $this->getData($this->key());
+    }
+
+    /**
+     * rewind the position of a file pointer
+     * 
+     * @return mixed
+     */
+    public function rewind()
+    {
+        return reset($this->_DATA);
+    }
+
+    /**
+     * checks if current position is valid
+     * 
+     * @return bool
+     */
+    public function valid()
+    {
+        return key($this->_DATA) !== null;
     }
 
     /**

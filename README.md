@@ -15,10 +15,10 @@ Its recommended to use packages `ClassEvents` and optionally `ClassBenchmark`.
 
 Documentation
 --------------
-* [ClassKernel\Base\BlueObject](https://githib.com/chajr/class-kernel/doc/BlueObject.md "BlueObject and Object")
-* [ClassKernel\Base\Register](https://githib.com/chajr/class-kernel/doc/Register.md "Register")
-* [ClassKernel\Data\Xml](https://githib.com/chajr/class-kernel/doc/Xml.md "Xml")
-* [Events](https://githib.com/chajr/class-kernel/doc/Events.md "Events")
+* [ClassKernel\Base\BlueObject](https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_BlueObject "BlueObject and Object")
+* [ClassKernel\Base\Register](https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_Register "Register")
+* [ClassKernel\Data\Xml](https://github.com/chajr/class-kernel/wiki/ClassKernel_Data_Xml "Xml")
+* [Events](https://github.com/chajr/class-kernel/wiki/Events "Events")
 
 Install via Composer
 --------------
@@ -51,7 +51,7 @@ Project description
 Change log
 --------------
 All release version changes:  
-[Change log](https://github.com/chajr/class-kernel/CHANGELOG.md "Change log")
+[Change log](https://github.com/chajr/class-kernel/wiki/Change-log "Change log")
 
 License
 --------------
