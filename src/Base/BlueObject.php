@@ -374,11 +374,9 @@ trait BlueObject
         $this->_prepareData($key);
         $data = null;
 
-        if (!$key) {
+        if ($key === null) {
             $data = $this->_DATA;
-        }
-
-        if (isset($this->_DATA[$key])) {
+        } elseif (isset($this->_DATA[$key])) {
             $data = $this->_DATA[$key];
         }
 
@@ -1463,7 +1461,7 @@ trait BlueObject
     protected function _dataPreparation($key, $data, array $rulesList)
     {
         foreach ($rulesList as $ruleKey => $function) {
-            if (!preg_match($ruleKey, $key)) {
+            if (!preg_match($ruleKey, $key) && $key !== null) {
                 continue;
             }
 
