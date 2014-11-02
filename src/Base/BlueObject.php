@@ -118,6 +118,27 @@ trait BlueObject
     protected $_integerKeysCounter = 0;
 
     /**
+     * allow to turn off/on data validation
+     * 
+     * @var bool
+     */
+    protected $_validationOn = true;
+
+    /**
+     * allow to turn off/on data preparation
+     * 
+     * @var bool
+     */
+    protected $_preparationOn = true;
+
+    /**
+     * allow to turn off/on data retrieve
+     * 
+     * @var bool
+     */
+    protected $_retrieveOn = true;
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -380,7 +401,10 @@ trait BlueObject
             $data = $this->_DATA[$key];
         }
 
-        return $this->_dataPreparation($key, $data, $this->_dataRetrieveCallbacks);
+        if (!$this->_retrieveOn) {
+            return $this->_dataPreparation($key, $data, $this->_dataRetrieveCallbacks);
+        }
+        return $data;
     }
 
     /**
@@ -1073,11 +1097,15 @@ trait BlueObject
         }
 
         $this->_dataChanged = true;
-        $this->_DATA[$key]  = $this->_dataPreparation(
-            $key,
-            $data,
-            $this->_dataPreparationCallbacks
-        );
+        if (!$this->_preparationOn) {
+            $this->_DATA[$key] = $this->_dataPreparation(
+                $key,
+                $data,
+                $this->_dataPreparationCallbacks
+            );
+        } else {
+            $this->_DATA[$key] = $data;
+        }
 
         return $this;
     }
@@ -1092,6 +1120,11 @@ trait BlueObject
     protected function _validateDataKey($key, $data)
     {
         $dataOkFlag = true;
+
+        if (!$this->_validationOn) {
+            return $dataOkFlag;
+        }
+
         foreach ($this->_validationRules as $ruleKey => $ruleValue) {
             if (!preg_match($ruleKey, $key)) {
                 continue;
@@ -1642,6 +1675,72 @@ trait BlueObject
     public function valid()
     {
         return key($this->_DATA) !== null;
+    }
+
+    /**
+     * allow to stop data validation
+     * 
+     * @return $this
+     */
+    public function stopValidation()
+    {
+        $this->_validationOn = false;
+        return $this;
+    }
+
+    /**
+     * allow to start data validation
+     * 
+     * @return $this
+     */
+    public function startValidation()
+    {
+        $this->_validationOn = true;
+        return $this;
+    }
+
+    /**
+     * allow to stop data preparation before add tro object
+     * 
+     * @return $this
+     */
+    public function stopOutputPreparation()
+    {
+        $this->_preparationOn = false;
+        return $this;
+    }
+
+    /**
+     * allow to start data preparation before add tro object
+     * 
+     * @return $this
+     */
+    public function startOutputPreparation()
+    {
+        $this->_preparationOn = true;
+        return $this;
+    }
+
+    /**
+     * allow to stop data preparation before return them from object
+     * 
+     * @return $this
+     */
+    public function stopInputPreparation()
+    {
+        $this->_retrieveOn = false;
+        return $this;
+    }
+
+    /**
+     * allow to start data preparation before return them from object
+     * 
+     * @return $this
+     */
+    public function startInputPreparation()
+    {
+        $this->_retrieveOn = true;
+        return $this;
     }
 
     /**
