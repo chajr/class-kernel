@@ -374,7 +374,7 @@ trait BlueObject
         $this->_prepareData($key);
         $data = null;
 
-        if ($key === null) {
+        if (is_null($key)) {
             $data = $this->_DATA;
         } elseif (isset($this->_DATA[$key])) {
             $data = $this->_DATA[$key];
@@ -438,11 +438,10 @@ trait BlueObject
      */
     public function hasData($key = null)
     {
-        if (!$key && !empty($this->_DATA)) {
-            return true;
-        }
-
-        if (isset($this->_DATA[$key])) {
+        if (
+            (is_null($key) && !empty($this->_DATA))
+            || isset($this->_DATA[$key])
+        ) {
             return true;
         }
 
@@ -476,7 +475,7 @@ trait BlueObject
         }
 
         switch (true) {
-            case $key === null:
+            case is_null($key):
                 return $this->_comparator($dataToCheck, $data, $operator);
             // no break, always will return boolean value
 
@@ -553,7 +552,7 @@ trait BlueObject
      */
     public function unsetData($key = null)
     {
-        if ($key === null) {
+        if (is_null($key)) {
             $this->_dataChanged  = true;
             $mergedData          = array_merge($this->_DATA, $this->_originalDATA);
             $this->_originalDATA = $this->_removeNewKeys($mergedData);
@@ -593,7 +592,7 @@ trait BlueObject
      */
     public function restoreData($key = null)
     {
-        if ($key === null) {
+        if (is_null($key)) {
             $mergedData         = array_merge($this->_DATA, $this->_originalDATA);
             $this->_DATA        = $this->_removeNewKeys($mergedData);
             $this->_dataChanged = false;
@@ -1048,9 +1047,7 @@ trait BlueObject
     }
 
     /**
-     * insert single key=>value pair into object, with key conversion
-     * and set _dataChanged to true
-     * also set original data for given key in $this->_originalDATA
+     * check that given data for key is valid and set in object if don't exist or is different
      *
      * @param string $key
      * @param mixed $data
@@ -1063,8 +1060,35 @@ trait BlueObject
             return $this;
         }
 
+        $hasData        = $this->hasData($key);
+        $preparedData   = $this->_dataPreparation(
+            $key,
+            $data,
+            $this->_dataPreparationCallbacks
+        );
+
+        if (!$hasData
+            || ($hasData && $this->_comparator($this->_DATA[$key], $preparedData, '!=='))
+        ) {
+            $this->_changeData($key, $preparedData);
+        }
+
+        return $this;
+    }
+
+    /**
+     * insert single key=>value pair into object, with key conversion
+     * and set _dataChanged to true
+     * also set original data for given key in $this->_originalDATA
+     * 
+     * @param string $key
+     * @param mixed $data
+     * @return $this
+     */
+    protected function _changeData($key, $data)
+    {
         if (!isset($this->_originalDATA[$key])
-            && isset($this->_DATA[$key])
+            && $this->hasData($key)
             && !isset($this->_newKeys[$key])
         ) {
             $this->_originalDATA[$key] = $this->_DATA[$key];
@@ -1073,11 +1097,7 @@ trait BlueObject
         }
 
         $this->_dataChanged = true;
-        $this->_DATA[$key]  = $this->_dataPreparation(
-            $key,
-            $data,
-            $this->_dataPreparationCallbacks
-        );
+        $this->_DATA[$key]  = $data;
 
         return $this;
     }
