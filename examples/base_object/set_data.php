@@ -116,6 +116,18 @@ $objectXml = new ClassKernel\Data\Object([
 ]);
 ?>
 
+<h5>Change existing key with the same data</h5>
+<code>
+<pre>$objectArray->setFirstData('a');
+var_dump($objectArray->dataChanged());</pre>
+</code>
+<?php
+$objectArray->setFirstData('a');
+echo '<pre>';
+var_dump($objectArray->dataChanged());
+echo '</pre>';
+?>
+
 <h5>Created objects dump</h5>
 <?php
 echo '<pre>';
