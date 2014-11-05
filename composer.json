@@ -15,7 +15,9 @@
         }
     ],
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=5.4.0",
+        "zendframework/zend-serializer": "2.*",
+        "zendframework/zend-servicemanager": "2.*"
     },
     "autoload": {
         "psr-4": {
