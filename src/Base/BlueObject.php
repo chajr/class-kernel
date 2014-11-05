@@ -15,6 +15,9 @@ use ClassKernel\Data\Xml;
 use stdClass;
 use DOMException;
 use DOMElement;
+use Zend\Serializer\Serializer;
+use Zend\Serializer\Exception\ExceptionInterface;
+use Exception;
 
 trait BlueObject
 {
@@ -352,7 +355,8 @@ trait BlueObject
     public function serialize($skipObjects = false)
     {
         $this->_prepareData();
-        $temporaryData = $this->getData();
+        $temporaryData  = $this->getData();
+        $data           = '';
 
         if ($skipObjects) {
             $temporaryData = $this->traveler(
@@ -364,7 +368,13 @@ trait BlueObject
             );
         }
 
-        return serialize($temporaryData);
+        try {
+            $data = Serializer::serialize($temporaryData);
+        } catch (ExceptionInterface $exception) {
+            $this->_addException($exception);
+        }
+
+        return $data;
     }
 
     /**
@@ -943,13 +953,7 @@ trait BlueObject
             $temp                  = $this->_xmlToArray($xml->documentElement);
             $this->_DATA           = $temp;
         } catch (DOMException $exception) {
-            $this->_errorsList[$exception->getCode()] = [
-                'message'   => $exception->getMessage(),
-                'line'      => $exception->getLine(),
-                'file'      => $exception->getFile(),
-                'trace'     => $exception->getTraceAsString(),
-            ];
-            $this->_hasErrors = true;
+            $this->_addException($exception);
         }
 
         return $this;
@@ -967,11 +971,18 @@ trait BlueObject
 
         /** @var $node DOMElement */
         foreach ($data->childNodes as $node) {
-            $nodeName = $this->_stringToIntegerKey($node->nodeName);
-            $nodeData = [];
+            $nodeName           = $this->_stringToIntegerKey($node->nodeName);
+            $nodeData           = [];
+            $unSerializedData   = [];
 
             if ($node->hasAttributes() && $node->getAttribute('serialized_object')) {
-                $temporaryData[$nodeName] = unserialize($node->nodeValue);
+                try {
+                    $unSerializedData = Serializer::unserialize($node->nodeValue);
+                } catch (ExceptionInterface $exception) {
+                    $this->_addException($exception);
+                }
+
+                $temporaryData[$nodeName] = $unSerializedData;
                 continue;
             }
 
@@ -1060,7 +1071,12 @@ trait BlueObject
      */
     protected function _appendSerialized($data)
     {
-        $data = unserialize($data);
+        try {
+            $data = Serializer::unserialize($data);
+        } catch (ExceptionInterface $exception) {
+            $this->_addException($exception);
+        }
+
         if (is_object($data)) {
             $this->_DATA[get_class($data)] = $data;
         } else {
@@ -1216,11 +1232,18 @@ trait BlueObject
         foreach ($data as $key => $value) {
             $key        = str_replace(' ', '_', $key);
             $attributes = [];
+            $data       = '';
 
             if (is_object($value)) {
+                try {
+                    $data = Serializer::serialize($value);
+                } catch (ExceptionInterface $exception) {
+                    $this->_addException($exception);
+                }
+
                 $value = [
                     '@attributes' => ['serialized_object' => true],
-                    serialize($value)
+                    $data
                 ];
             }
 
@@ -1246,13 +1269,7 @@ trait BlueObject
                 $parent->appendChild($element);
 
             } catch (DOMException $exception) {
-                $this->_errorsList[$exception->getCode()] = [
-                    'message'   => $exception->getMessage(),
-                    'line'      => $exception->getLine(),
-                    'file'      => $exception->getFile(),
-                    'trace'     => $exception->getTraceAsString(),
-                ];
-                $this->_hasErrors = true;
+                $this->_addException($exception);
             }
         }
 
@@ -1758,6 +1775,25 @@ trait BlueObject
     public function startInputPreparation()
     {
         $this->_retrieveOn = true;
+        return $this;
+    }
+
+    /**
+     * create exception message and set it in object
+     * 
+     * @param Exception $exception
+     * @return $this
+     */
+    protected function _addException(Exception $exception)
+    {
+        $this->_hasErrors = true;
+        $this->_errorsList[$exception->getCode()] = [
+            'message'   => $exception->getMessage(),
+            'line'      => $exception->getLine(),
+            'file'      => $exception->getFile(),
+            'trace'     => $exception->getTraceAsString(),
+        ];
+
         return $this;
     }
 
