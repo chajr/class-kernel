@@ -150,7 +150,7 @@ trait BlueObject
      */
     public function __construct($options = [])
     {
-        if (isset($options['data'])) {
+        if (array_key_exists('data', $options)) {
             $this->_options = array_merge($this->_options, $options);
             $data           = $this->_options['data'];
         } else {
@@ -250,14 +250,14 @@ trait BlueObject
         switch (true) {
             case substr($method, 0, 3) === 'get':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                if (isset($arguments[0])) {
+                if (array_key_exists(0, $arguments)) {
                     return $this->getData($key, $arguments[0]);
                 }
                 return $this->getData($key);
 
             case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                if (isset($arguments[0])) {
+                if (array_key_exists(0, $arguments)) {
                     return $this->setData($key, $arguments[0]);
                 }
                 return $this->setData($key);
@@ -407,7 +407,7 @@ trait BlueObject
 
         if (is_null($key)) {
             $data = $this->_DATA;
-        } elseif (isset($this->_DATA[$key])) {
+        } elseif (array_key_exists($key, $this->_DATA)) {
             $data = $this->_DATA[$key];
         }
 
@@ -456,7 +456,7 @@ trait BlueObject
             return $data;
         }
 
-        if (isset($data[$key])) {
+        if (array_key_exists($key, $data)) {
             return $data[$key];
         }
 
@@ -474,7 +474,7 @@ trait BlueObject
     {
         if (
             (is_null($key) && !empty($this->_DATA))
-            || isset($this->_DATA[$key])
+            || array_key_exists($key, $this->_DATA)
         ) {
             return true;
         }
@@ -514,7 +514,7 @@ trait BlueObject
             // no break, always will return boolean value
 
             default:
-                if (isset($data[$key])) {
+                if (array_key_exists($key, $data)) {
                     return $this->_comparator($dataToCheck, $data[$key], $operator);
                 } else {
                     return false;
@@ -592,10 +592,12 @@ trait BlueObject
             $this->_originalDATA = $this->_removeNewKeys($mergedData);
             $this->_DATA         = [];
 
-        } elseif (isset($this->_DATA[$key])) {
+        } elseif (array_key_exists($key, $this->_DATA)) {
             $this->_dataChanged = true;
 
-            if (!isset($this->_originalDATA[$key]) && !isset($this->_newKeys[$key])) {
+            if (!array_key_exists($key, $this->_originalDATA)
+                && !array_key_exists($key, $this->_newKeys)
+            ) {
                 $this->_originalDATA[$key] = $this->_DATA[$key];
             }
 
@@ -631,7 +633,7 @@ trait BlueObject
             $this->_DATA        = $this->_removeNewKeys($mergedData);
             $this->_dataChanged = false;
         } else {
-            if (isset($this->_originalDATA[$key])) {
+            if (array_key_exists($key, $this->_originalDATA)) {
                 $this->_DATA[$key] = $this->_originalDATA[$key];
             }
         }
@@ -1100,7 +1102,7 @@ trait BlueObject
             return $this;
         }
 
-        $hasData        = $this->hasData($key);
+        $hasData = $this->hasData($key);
         if (!$this->_preparationOn) {
             $data = $this->_dataPreparation(
                 $key,
@@ -1112,7 +1114,7 @@ trait BlueObject
         if (!$hasData
             || ($hasData && $this->_comparator($this->_DATA[$key], $data, '!=='))
         ) {
-            $this->_changeData($key, $data);
+            $this->_changeData($key, $data, $hasData);
         }
 
         return $this;
@@ -1125,13 +1127,14 @@ trait BlueObject
      * 
      * @param string $key
      * @param mixed $data
+     * @param bool $hasData
      * @return $this
      */
-    protected function _changeData($key, $data)
+    protected function _changeData($key, $data, $hasData)
     {
-        if (!isset($this->_originalDATA[$key])
-            && $this->hasData($key)
-            && !isset($this->_newKeys[$key])
+        if (!array_key_exists($key, $this->_originalDATA)
+            && $hasData
+            && !array_key_exists($key, $this->_newKeys)
         ) {
             $this->_originalDATA[$key] = $this->_DATA[$key];
         } else {
@@ -1207,7 +1210,7 @@ trait BlueObject
      */
     protected function _convertKeyNames($key)
     {
-        if (isset(self::$_cacheKeys[$key])) {
+        if (array_key_exists($key, self::$_cacheKeys)) {
             return self::$_cacheKeys[$key];
         }
 
@@ -1248,7 +1251,7 @@ trait BlueObject
             }
 
             try {
-                if (isset($value['@attributes'])) {
+                if (array_key_exists('@attributes', $value)) {
                     $attributes = $value['@attributes'];
                     unset ($value['@attributes']);
                 }
@@ -1297,7 +1300,7 @@ trait BlueObject
     ) {
         $count      = count($value) === 1;
         $isNotEmpty = !empty($attributes);
-        $exist      = isset($value[0]);
+        $exist      = array_key_exists(0, $value);
 
         if ($count && $isNotEmpty && $exist) {
             $children = $this->_appendDataToNode(
