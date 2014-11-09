@@ -14,23 +14,259 @@ use ClassKernel\Data\Object;
 class ObjectTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * create object and check data returned by get* methods
+     * check that object after creation has some errors
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testCreateSimpleObject($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->checkErrors());
+        $this->assertEmpty($object->returnObjectError());
+    }
+
+    /**
+     * check data returned by get* methods
      * 
      * @param int $first
      * @param int $second
      * 
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
+     * @requires _simpleObject
      */
-    public function testCreateSimpleObject($first, $second)
+    public function testGetDataFromObject($first, $second)
     {
-        $a = new Object([
-            'data_first'    => $first,
-            'data_second'   => $second,
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertEquals($first, $object->getDataFirst());
+        $this->assertEquals($second, $object->getData('data_second'));
+        $this->assertEquals($second, $object['data_second']);
+        $this->assertNull($object->getDataNotExists());
+
+        $this->assertEquals(
+            $this->_getSimpleData($first, $second),
+            $object->getData()
+        );
+    }
+
+    /**
+     * check data with has*, is* and not* magic methods
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testCheckingData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertTrue($object->hasDataFirst());
+        $this->assertFalse($object->hasDataNotExists());
+
+        $this->assertTrue(isset($object['data_first']));
+        $this->assertFalse(isset($object['data_not_exist']));
+
+        $this->assertTrue($object->isDataFirst($first));
+        $this->assertFalse($object->isDataFirst('1'));
+
+        $this->assertTrue($object->notDataFirst('1'));
+        $this->assertFalse($object->notDataFirst($first));
+    }
+
+    /**
+     * check add data by set* magic method with information about value exist and object changes
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testSetDataInObjectByMagicMethods($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->hasDataThird());
+        $this->assertFalse($object->dataChanged());
+
+        $object->setDataThird(3);
+        $object['data_fourth'] = 4;
+
+        $this->assertTrue($object->hasDataThird());
+        $this->assertTrue($object->hasData('data_fourth'));
+        $this->assertTrue($object->dataChanged());
+
+        $this->assertFalse($object->checkErrors());
+    }
+
+    /**
+     * check add data by setData method with information about value exist and object changes
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testSetDataInObjectByDataMethod($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->hasDataThird());
+        $this->assertFalse($object->hasData('data_fourth'));
+        $this->assertFalse($object->dataChanged());
+
+        $object->setData([
+            'data_third'    => 3,
+            'data_fourth'   => 4,
         ]);
 
-        $this->assertEquals($first, $a->getDataFirst());
-        $this->assertEquals($second, $a->getDataSecond());
+        $this->assertTrue($object->hasDataThird());
+        $this->assertTrue($object->hasData('data_fourth'));
+        $this->assertTrue($object->dataChanged());
+
+        $this->assertFalse($object->checkErrors());
+    }
+
+    /**
+     * check removing and clearing data with information about value exist and object changes
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testRemovingData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->dataChanged());
+
+        $object->clearDataFirst();
+        $this->assertNull($object->getDataFirst());
+        $this->assertTrue($object->hasDataFirst());
+
+        unset($object['data_first']);
+        $this->assertFalse($object->hasDataFirst());
+
+        $object->unsetDataSecond();
+        $this->assertNull($object->getDataSecond());
+        $this->assertFalse($object->hasDataSecond());
+
+        $this->assertTrue($object->dataChanged());
+    }
+
+    /**
+     * check restore data for single key
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testDataRestorationForSingleData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->dataChanged());
+        $object->setDataFirst('bar');
+        $this->assertTrue($object->dataChanged());
+        $this->assertEquals('bar', $object->getDataFirst());
+
+        $object->restoreDataFirst();
+        $this->assertEquals($first, $object->getDataFirst());
+        $this->assertTrue($object->dataChanged());
+    }
+
+    /**
+     * check restoration for all data in object with change dataChanged value
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testFullDataRestoration($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->dataChanged());
+        $object->setDataFirst('bar');
+        $object->setDataSecond('moo');
+        $this->assertTrue($object->dataChanged());
+
+        $object->restoreData();
+        $this->assertEquals(
+            $this->_getSimpleData($first, $second),
+            $object->getData()
+        );
+        $this->assertFalse($object->dataChanged());
+    }
+
+    /**
+     * check set current data as original data
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testDataReplacement($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertFalse($object->dataChanged());
+        $object->setDataFirst('bar');
+        $object->setDataSecond('moo');
+        $this->assertTrue($object->dataChanged());
+
+        $object->replaceDataArrays();
+
+        $this->assertFalse($object->dataChanged());
+    }
+
+    /**
+     * check set current data as original data
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testAccessToDataAsArray($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        foreach ($object as $key => $val) {
+            if ($key === 'data_first') {
+                $this->assertEquals($first, $val);
+            }
+            if ($key === 'data_second') {
+                $this->assertEquals($second, $val);
+            }
+        }
     }
 
     /**
@@ -40,6 +276,38 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function baseDataProvider()
     {
-        return [[1, 2]];
+        return [
+            [1, 2],
+            ['first', 'second'],
+            [true, false],
+            [null, ['foo', 'bar']],
+        ];
+    }
+
+    /**
+     * create simple object to test
+     * 
+     * @param mixed $first
+     * @param mixed $second
+     * @return \ClassKernel\Data\Object
+     */
+    protected function _simpleObject($first, $second)
+    {
+        return new Object($this->_getSimpleData($first, $second));
+    }
+
+    /**
+     * return basic data to test
+     * 
+     * @param mixed $first
+     * @param mixed $second
+     * @return array
+     */
+    protected function _getSimpleData($first, $second)
+    {
+        return [
+            'data_first'    => $first,
+            'data_second'   => $second,
+        ];
     }
 }
