@@ -794,7 +794,7 @@ trait BlueObject
         $data           = $this->getData($key);
         $originalData   = $this->returnOriginalData($key);
 
-        return $data != $originalData;
+        return $data !== $originalData;
     }
 
     /**
