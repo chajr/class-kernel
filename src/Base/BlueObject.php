@@ -1197,12 +1197,14 @@ trait BlueObject
             }
 
             try {
-                if (array_key_exists('@attributes', $value)) {
+                $isArray = is_array($value);
+
+                if ($isArray && array_key_exists('@attributes', $value)) {
                     $attributes = $value['@attributes'];
                     unset ($value['@attributes']);
                 }
 
-                if (is_array($value)) {
+                if ($isArray) {
                     $parent = $this->_convertArrayDataToXml(
                         $value,
                         $addCdata,
