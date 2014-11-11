@@ -171,6 +171,18 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * check that access to non existing method will create error information
+     */
+    public function testAccessForNonExistingMethods()
+    {
+        $object = new Object();
+        $object->executeNonExistingMethod();
+
+        $this->assertTrue($object->checkErrors());
+        $this->assertArrayHasKey('wrong_method', $object->returnObjectError());
+    }
+
+    /**
      * check restore data for single key
      *
      * @param int $first
@@ -185,9 +197,13 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object = $this->_simpleObject($first, $second);
 
         $this->assertFalse($object->dataChanged());
+        $this->assertFalse($object->keyDataChanged('data_first'));
         $object->setDataFirst('bar');
+
         $this->assertTrue($object->dataChanged());
         $this->assertEquals('bar', $object->getDataFirst());
+        $this->assertEquals($first, $object->returnOriginalData('data_first'));
+        $this->assertTrue($object->keyDataChanged('data_first'));
 
         $object->restoreDataFirst();
         $this->assertEquals($first, $object->getDataFirst());
@@ -267,6 +283,85 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
                 $this->assertEquals($second, $val);
             }
         }
+    }
+
+    /**
+     * check set current data as original data
+     *
+     * @requires _getSimpleData
+     */
+    public function testDataValidation()
+    {
+        $object = new Object();
+        $object->putValidationRule('#data_first#', '#^[\d]+$#');
+        $object->putValidationRule('#data_second#', '#[\w]*#');
+        $object->setData($this->_getSimpleData('first data', 'second data'));
+
+        $this->assertTrue($object->checkErrors());
+        $this->assertEquals($object->returnObjectError()[0]['message'], 'validation_mismatch');
+    }
+
+    /**
+     * allow to change data before insert for founded key using closure
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testDataPreparationOnEnter($first, $second)
+    {
+        $object = new Object();
+        $object->putPreparationCallback('#data_[\w]+#', function ($key, $value) {
+            if ($key === 'data_second') {
+                return 'second';
+            }
+
+            $value .= '_modified';
+            return $value;
+        });
+
+        $object->setDataFirst($first);
+        $object->setDataSecond($second);
+
+        $this->assertEquals($first . '_modified', $object->getDataFirst());
+        $this->assertEquals('second', $object->getData('data_second'));
+
+        $object->setData([
+            'data_third'    => 'bar',
+            'data_fourth'   => 'moo',
+        ]);
+    }
+
+    /**
+     * allow to change data before return for founded key using closure
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testDataPreparationOnReturn($first, $second)
+    {
+        $object = new Object();
+        $object->putReturnCallback('#data_[\w]+#', function ($key, $value) {
+            if ($key === 'data_second') {
+                return 'second';
+            }
+
+            $value .= '_modified';
+            return $value;
+        });
+
+        $object->setDataFirst($first);
+        $object->setDataSecond($second);
+
+        $this->assertEquals($first . '_modified', $object->getDataFirst());
+        $this->assertEquals('second', $object->getData('data_second'));
     }
 
     /**
