@@ -411,7 +411,7 @@ trait BlueObject
             $data = $this->_DATA[$key];
         }
 
-        if (!$this->_retrieveOn) {
+        if ($this->_retrieveOn) {
             return $this->_dataPreparation($key, $data, $this->_dataRetrieveCallbacks);
         }
         return $data;
@@ -1103,7 +1103,7 @@ trait BlueObject
         }
 
         $hasData = $this->hasData($key);
-        if (!$this->_preparationOn) {
+        if ($this->_preparationOn) {
             $data = $this->_dataPreparation(
                 $key,
                 $data,
