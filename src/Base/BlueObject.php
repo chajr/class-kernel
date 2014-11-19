@@ -682,7 +682,7 @@ trait BlueObject
 
         $xml    = new Xml(['version' => $version]);
         $root   = $xml->createElement('root');
-        $xml    = $this->_arrayToXml($this->_DATA, $xml, $addCdata, $root);
+        $xml    = $this->_arrayToXml($this->getData(), $xml, $addCdata, $root);
 
         $xml->appendChild($root);
 
@@ -712,7 +712,7 @@ trait BlueObject
         $this->_prepareData();
         $data = new stdClass();
 
-        foreach ($this->_DATA as $key => $val) {
+        foreach ($this->getData() as $key => $val) {
             $data->$key = $val;
         }
 
@@ -1477,7 +1477,7 @@ trait BlueObject
 
     /**
      * return data formatted by given function
-     * 
+     *
      * @param string $key
      * @param mixed $data
      * @param array $rulesList
@@ -1486,11 +1486,38 @@ trait BlueObject
     protected function _dataPreparation($key, $data, array $rulesList)
     {
         foreach ($rulesList as $ruleKey => $function) {
-            if (!preg_match($ruleKey, $key) && $key !== null) {
-                continue;
-            }
 
-            $data = $this->_callUserFunction($function, $key, $data, null);
+            switch (true) {
+                case is_null($key):
+                    $data = $this->_prepareWholeData($ruleKey, $data, $function);
+                    break;
+
+                case preg_match($ruleKey, $key) && !is_null($key):
+                    $data = $this->_callUserFunction($function, $key, $data, null);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * allow to use return preparation on all data in object
+     *
+     * @param string $ruleKey
+     * @param array $data
+     * @param array|string|\Closure $function
+     * @return array
+     */
+    protected function _prepareWholeData($ruleKey, array $data, $function)
+    {
+        foreach ($data as $key => $value) {
+            if (preg_match($ruleKey, $key)) {
+                $data[$key] = $this->_callUserFunction($function, $key, $value, null);
+            }
         }
 
         return $data;
