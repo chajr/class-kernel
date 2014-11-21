@@ -216,6 +216,7 @@ trait BlueObject
      * allow to access DATA keys by using special methods
      * like getSomeData() will return $_DATA['some_data'] value or
      * setSomeData('val') will create $_DATA['some_data'] key with 'val' value
+     * all magic methods handle data put and return preparation
      *
      * @param string $method
      * @param array $arguments
@@ -407,6 +408,7 @@ trait BlueObject
 
     /**
      * return original data for key, before it was changed
+     * that method don't handle return data preparation
      *
      * @param null|string $key
      * @return mixed
@@ -452,7 +454,8 @@ trait BlueObject
      * check that given data and data in object with given operator
      * use the same operator like in PHP (eg ===, !=, <, ...)
      * possibility to compare with origin data
-     * 
+     * that method don't handle return data preparation
+     *
      * if return null, comparator symbol was wrong
      *
      * @param mixed $dataToCheck
@@ -877,7 +880,7 @@ trait BlueObject
         $jsonData = json_decode($data, true);
 
         if ($jsonData) {
-            $this->_DATA = $jsonData;
+            $this->setData($jsonData);
         }
 
         return $this;
@@ -893,9 +896,9 @@ trait BlueObject
     {
         $loadedXml      = simplexml_load_string($data);
         $jsonXml        = json_encode($loadedXml);
-        $this->_DATA    = json_decode($jsonXml, true);
+        $jsonData       = json_decode($jsonXml, true);
 
-        return $this;
+        return $this->setData($jsonData);
     }
 
     /**
@@ -918,8 +921,8 @@ trait BlueObject
         }
 
         try {
-            $temp                  = $this->_xmlToArray($xml->documentElement);
-            $this->_DATA           = $temp;
+            $temp = $this->_xmlToArray($xml->documentElement);
+            $this->setData($temp);
         } catch (DOMException $exception) {
             $this->_errorsList[$exception->getCode()] = [
                 'message'   => $exception->getMessage(),
@@ -1008,9 +1011,9 @@ trait BlueObject
     protected function _appendArray($data)
     {
         if (is_array($data)) {
-            $this->_DATA = $data;
+            $this->setData($data);
         } else {
-            $this->_DATA['default'] = $data;
+            $this->setData('default', $data);
         }
 
         return $this;
@@ -1024,10 +1027,8 @@ trait BlueObject
      */
     protected function _appendStdClass(stdClass $class)
     {
-        $this->_DATA = get_object_vars($class);
-        return $this;
+        return $this->setData(get_object_vars($class));
     }
-    
 
     /**
      * set data from serialized string as object data
@@ -1040,9 +1041,10 @@ trait BlueObject
     {
         $data = unserialize($data);
         if (is_object($data)) {
-            $this->_DATA[get_class($data)] = $data;
+            $name = $this->_convertKeyNames(get_class($data));
+            $this->setData($name, $data);
         } else {
-            $this->_DATA = $data;
+            $this->setData($data);
         }
 
         return $this;
