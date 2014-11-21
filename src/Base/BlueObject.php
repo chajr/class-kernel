@@ -126,7 +126,7 @@ trait BlueObject
      */
     public function __construct($options = [])
     {
-        if (isset($options['data'])) {
+        if (array_key_exists('data', $options)) {
             $this->_options = array_merge($this->_options, $options);
             $data           = $this->_options['data'];
         } else {
@@ -216,6 +216,7 @@ trait BlueObject
      * allow to access DATA keys by using special methods
      * like getSomeData() will return $_DATA['some_data'] value or
      * setSomeData('val') will create $_DATA['some_data'] key with 'val' value
+     * all magic methods handle data put and return preparation
      *
      * @param string $method
      * @param array $arguments
@@ -226,14 +227,14 @@ trait BlueObject
         switch (true) {
             case substr($method, 0, 3) === 'get':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                if (isset($arguments[0])) {
+                if (array_key_exists(0, $arguments)) {
                     return $this->getData($key, $arguments[0]);
                 }
                 return $this->getData($key);
 
             case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                if (isset($arguments[0])) {
+                if (array_key_exists(0, $arguments)) {
                     return $this->setData($key, $arguments[0]);
                 }
                 return $this->setData($key);
@@ -376,7 +377,7 @@ trait BlueObject
 
         if (is_null($key)) {
             $data = $this->_DATA;
-        } elseif (isset($this->_DATA[$key])) {
+        } elseif (array_key_exists($key, $this->_DATA)) {
             $data = $this->_DATA[$key];
         }
 
@@ -407,6 +408,7 @@ trait BlueObject
 
     /**
      * return original data for key, before it was changed
+     * that method don't handle return data preparation
      *
      * @param null|string $key
      * @return mixed
@@ -422,7 +424,7 @@ trait BlueObject
             return $data;
         }
 
-        if (isset($data[$key])) {
+        if (array_key_exists($key, $data)) {
             return $data[$key];
         }
 
@@ -440,7 +442,7 @@ trait BlueObject
     {
         if (
             (is_null($key) && !empty($this->_DATA))
-            || isset($this->_DATA[$key])
+            || array_key_exists($key, $this->_DATA)
         ) {
             return true;
         }
@@ -452,7 +454,8 @@ trait BlueObject
      * check that given data and data in object with given operator
      * use the same operator like in PHP (eg ===, !=, <, ...)
      * possibility to compare with origin data
-     * 
+     * that method don't handle return data preparation
+     *
      * if return null, comparator symbol was wrong
      *
      * @param mixed $dataToCheck
@@ -480,7 +483,7 @@ trait BlueObject
             // no break, always will return boolean value
 
             default:
-                if (isset($data[$key])) {
+                if (array_key_exists($key, $data)) {
                     return $this->_comparator($dataToCheck, $data[$key], $operator);
                 } else {
                     return false;
@@ -558,10 +561,12 @@ trait BlueObject
             $this->_originalDATA = $this->_removeNewKeys($mergedData);
             $this->_DATA         = [];
 
-        } elseif (isset($this->_DATA[$key])) {
+        } elseif (array_key_exists($key, $this->_DATA)) {
             $this->_dataChanged = true;
 
-            if (!isset($this->_originalDATA[$key]) && !isset($this->_newKeys[$key])) {
+            if (!array_key_exists($key, $this->_originalDATA)
+                && !array_key_exists($key, $this->_newKeys)
+            ) {
                 $this->_originalDATA[$key] = $this->_DATA[$key];
             }
 
@@ -597,7 +602,7 @@ trait BlueObject
             $this->_DATA        = $this->_removeNewKeys($mergedData);
             $this->_dataChanged = false;
         } else {
-            if (isset($this->_originalDATA[$key])) {
+            if (array_key_exists($key, $this->_originalDATA)) {
                 $this->_DATA[$key] = $this->_originalDATA[$key];
             }
         }
@@ -680,7 +685,7 @@ trait BlueObject
 
         $xml    = new Xml(['version' => $version]);
         $root   = $xml->createElement('root');
-        $xml    = $this->_arrayToXml($this->_DATA, $xml, $addCdata, $root);
+        $xml    = $this->_arrayToXml($this->getData(), $xml, $addCdata, $root);
 
         $xml->appendChild($root);
 
@@ -710,7 +715,7 @@ trait BlueObject
         $this->_prepareData();
         $data = new stdClass();
 
-        foreach ($this->_DATA as $key => $val) {
+        foreach ($this->getData() as $key => $val) {
             $data->$key = $val;
         }
 
@@ -758,7 +763,7 @@ trait BlueObject
         $data           = $this->getData($key);
         $originalData   = $this->returnOriginalData($key);
 
-        return $data != $originalData;
+        return $data !== $originalData;
     }
 
     /**
@@ -875,7 +880,7 @@ trait BlueObject
         $jsonData = json_decode($data, true);
 
         if ($jsonData) {
-            $this->_DATA = $jsonData;
+            $this->setData($jsonData);
         }
 
         return $this;
@@ -891,9 +896,9 @@ trait BlueObject
     {
         $loadedXml      = simplexml_load_string($data);
         $jsonXml        = json_encode($loadedXml);
-        $this->_DATA    = json_decode($jsonXml, true);
+        $jsonData       = json_decode($jsonXml, true);
 
-        return $this;
+        return $this->setData($jsonData);
     }
 
     /**
@@ -916,8 +921,8 @@ trait BlueObject
         }
 
         try {
-            $temp                  = $this->_xmlToArray($xml->documentElement);
-            $this->_DATA           = $temp;
+            $temp = $this->_xmlToArray($xml->documentElement);
+            $this->setData($temp);
         } catch (DOMException $exception) {
             $this->_errorsList[$exception->getCode()] = [
                 'message'   => $exception->getMessage(),
@@ -1006,9 +1011,9 @@ trait BlueObject
     protected function _appendArray($data)
     {
         if (is_array($data)) {
-            $this->_DATA = $data;
+            $this->setData($data);
         } else {
-            $this->_DATA['default'] = $data;
+            $this->setData('default', $data);
         }
 
         return $this;
@@ -1022,10 +1027,8 @@ trait BlueObject
      */
     protected function _appendStdClass(stdClass $class)
     {
-        $this->_DATA = get_object_vars($class);
-        return $this;
+        return $this->setData(get_object_vars($class));
     }
-    
 
     /**
      * set data from serialized string as object data
@@ -1038,9 +1041,10 @@ trait BlueObject
     {
         $data = unserialize($data);
         if (is_object($data)) {
-            $this->_DATA[get_class($data)] = $data;
+            $name = $this->_convertKeyNames(get_class($data));
+            $this->setData($name, $data);
         } else {
-            $this->_DATA = $data;
+            $this->setData($data);
         }
 
         return $this;
@@ -1070,7 +1074,7 @@ trait BlueObject
         if (!$hasData
             || ($hasData && $this->_comparator($this->_DATA[$key], $preparedData, '!=='))
         ) {
-            $this->_changeData($key, $preparedData);
+            $this->_changeData($key, $preparedData, $hasData);
         }
 
         return $this;
@@ -1083,13 +1087,14 @@ trait BlueObject
      * 
      * @param string $key
      * @param mixed $data
+     * @param bool $hasData
      * @return $this
      */
-    protected function _changeData($key, $data)
+    protected function _changeData($key, $data, $hasData)
     {
-        if (!isset($this->_originalDATA[$key])
-            && $this->hasData($key)
-            && !isset($this->_newKeys[$key])
+        if (!array_key_exists($key, $this->_originalDATA)
+            && $hasData
+            && !array_key_exists($key, $this->_newKeys)
         ) {
             $this->_originalDATA[$key] = $this->_DATA[$key];
         } else {
@@ -1160,7 +1165,7 @@ trait BlueObject
      */
     protected function _convertKeyNames($key)
     {
-        if (isset(self::$_cacheKeys[$key])) {
+        if (array_key_exists($key, self::$_cacheKeys)) {
             return self::$_cacheKeys[$key];
         }
 
@@ -1194,12 +1199,14 @@ trait BlueObject
             }
 
             try {
-                if (isset($value['@attributes'])) {
+                $isArray = is_array($value);
+
+                if ($isArray && array_key_exists('@attributes', $value)) {
                     $attributes = $value['@attributes'];
                     unset ($value['@attributes']);
                 }
 
-                if (is_array($value)) {
+                if ($isArray) {
                     $parent = $this->_convertArrayDataToXml(
                         $value,
                         $addCdata,
@@ -1249,7 +1256,7 @@ trait BlueObject
     ) {
         $count      = count($value) === 1;
         $isNotEmpty = !empty($attributes);
-        $exist      = isset($value[0]);
+        $exist      = array_key_exists(0, $value);
 
         if ($count && $isNotEmpty && $exist) {
             $children = $this->_appendDataToNode(
@@ -1472,7 +1479,7 @@ trait BlueObject
 
     /**
      * return data formatted by given function
-     * 
+     *
      * @param string $key
      * @param mixed $data
      * @param array $rulesList
@@ -1481,11 +1488,38 @@ trait BlueObject
     protected function _dataPreparation($key, $data, array $rulesList)
     {
         foreach ($rulesList as $ruleKey => $function) {
-            if (!preg_match($ruleKey, $key) && $key !== null) {
-                continue;
-            }
 
-            $data = $this->_callUserFunction($function, $key, $data, null);
+            switch (true) {
+                case is_null($key):
+                    $data = $this->_prepareWholeData($ruleKey, $data, $function);
+                    break;
+
+                case preg_match($ruleKey, $key) && !is_null($key):
+                    $data = $this->_callUserFunction($function, $key, $data, null);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * allow to use return preparation on all data in object
+     *
+     * @param string $ruleKey
+     * @param array $data
+     * @param array|string|\Closure $function
+     * @return array
+     */
+    protected function _prepareWholeData($ruleKey, array $data, $function)
+    {
+        foreach ($data as $key => $value) {
+            if (preg_match($ruleKey, $key)) {
+                $data[$key] = $this->_callUserFunction($function, $key, $value, null);
+            }
         }
 
         return $data;
