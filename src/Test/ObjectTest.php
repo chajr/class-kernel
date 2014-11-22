@@ -295,10 +295,41 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object = new Object();
         $object->putValidationRule('#data_first#', '#^[\d]+$#');
         $object->putValidationRule('#data_second#', '#[\w]*#');
-        $object->setData($this->_getSimpleData('first data', 'second data'));
+        $object->putValidationRule('#data_(third|fourth)#', function ($key, $data) {
+            if (is_null($data)) {
+                return true;
+            }
+            return false;
+        });
+
+        $object->setData([
+            'data_first'    => 'first data',
+            'data_second'   => 'second data',
+            'data_third'    => 'third data',
+            'data_fourth'   => null,
+        ]);
 
         $this->assertTrue($object->checkErrors());
-        $this->assertEquals($object->returnObjectError()[0]['message'], 'validation_mismatch');
+        $this->assertEquals($object->returnObjectError()[0], [
+            "message" => "validation_mismatch",
+            "key"=> "data_first",
+            "data"=> "first data",
+            "rule"=> "#^[\d]+$#"
+        ]);
+        $this->assertEquals($object->returnObjectError()[1], [
+            "message"=> "validation_mismatch",
+            "key"=> "data_third",
+            "data"=> "third data",
+            "rule"=>  'Closure [ <user> public method Test\{closure} ] {
+  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 298 - 303
+
+  - Parameters [2] {
+    Parameter #0 [ <required> $key ]
+    Parameter #1 [ <required> $data ]
+  }
+}
+']);
+        $this->assertCount(2, $object->returnObjectError());
     }
 
     /**

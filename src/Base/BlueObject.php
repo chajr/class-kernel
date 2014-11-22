@@ -18,6 +18,8 @@ use DOMElement;
 use Zend\Serializer\Serializer;
 use Zend\Serializer\Exception\ExceptionInterface;
 use Exception;
+use Closure;
+use ReflectionFunction;
 
 trait BlueObject
 {
@@ -1178,16 +1180,25 @@ trait BlueObject
 
     /**
      * check data with given rule and set error information
+     * allow to use method or function (must return true or false)
      * 
-     * @param string $rule
+     * @param string|array|string|\Closure $rule
      * @param string $key
      * @param mixed $data
      * @return bool
      */
     protected function _validateData($rule, $key, $data)
     {
-        if (preg_match($rule, $data)) {
+        if (
+            (is_callable($rule) && call_user_func_array($rule, [$key, $data, $this]))
+            || @preg_match($rule, $data)
+        ) {
             return true;
+        }
+
+        if ($rule instanceof Closure) {
+            $reflection = new ReflectionFunction($rule);
+            $rule       = $reflection->__toString();
         }
 
         $this->_errorsList[] = [
@@ -1548,10 +1559,10 @@ trait BlueObject
      * set regular expression for key find and validate data
      * 
      * @param string $ruleKey
-     * @param string $ruleValue
+     * @param callable $ruleValue
      * @return $this
      */
-    public function putPreparationCallback($ruleKey, $ruleValue = null)
+    public function putPreparationCallback($ruleKey, callable $ruleValue = null)
     {
         return $this->_genericPut($ruleKey, $ruleValue, 'preparation_callback');
     }
@@ -1582,10 +1593,10 @@ trait BlueObject
      * set regular expression for key find and validate data
      * 
      * @param string $ruleKey
-     * @param string $ruleValue
+     * @param callable $ruleValue
      * @return $this
      */
-    public function putReturnCallback($ruleKey, $ruleValue = null)
+    public function putReturnCallback($ruleKey, callable $ruleValue = null)
     {
         return $this->_genericPut($ruleKey, $ruleValue, 'return_callback');
     }
