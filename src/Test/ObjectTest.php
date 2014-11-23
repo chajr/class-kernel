@@ -14,6 +14,53 @@ use ClassKernel\Data\Object;
 class ObjectTest extends \PHPUnit_Framework_TestCase
 {
     /**
+     * check set current data as original data
+     *
+     * @requires _getSimpleData
+     */
+    public function testDataValidation()
+    {
+        $object = new Object();
+        $object->putValidationRule('#data_first#', '#^[\d]+$#');
+        $object->putValidationRule('#data_second#', '#[\w]*#');
+        $object->putValidationRule('#data_(third|fourth)#', function ($key, $data) {
+            if (is_null($data)) {
+                return true;
+            }
+            return false;
+        });
+
+        $object->setData([
+            'data_first'    => 'first data',
+            'data_second'   => 'second data',
+            'data_third'    => 'third data',
+            'data_fourth'   => null,
+        ]);
+
+        $this->assertTrue($object->checkErrors());
+        $this->assertEquals($object->returnObjectError()[0], [
+            "message" => "validation_mismatch",
+            "key"=> "data_first",
+            "data"=> "first data",
+            "rule"=> "#^[\\d]+$#"
+        ]);
+        $this->assertEquals($object->returnObjectError()[1], [
+            "message"=> "validation_mismatch",
+            "key"=> "data_third",
+            "data"=> "third data",
+            "rule"=>  'Closure [ <user> public method Test\{closure} ] {
+  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 26 - 31
+
+  - Parameters [2] {
+    Parameter #0 [ <required> $key ]
+    Parameter #1 [ <required> $data ]
+  }
+}
+']);
+        $this->assertCount(2, $object->returnObjectError());
+    }
+
+    /**
      * check that object after creation has some errors
      *
      * @param int $first
@@ -262,7 +309,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * check set current data as original data
+     * check usage object as array (access data and loop processing)
      *
      * @param int $first
      * @param int $second
@@ -283,53 +330,44 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
                 $this->assertEquals($second, $val);
             }
         }
+
+        $this->assertEquals($object['data_first'], $first);
     }
 
     /**
-     * check set current data as original data
+     * check access and setup data by object attributes
      *
-     * @requires _getSimpleData
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
      */
-    public function testDataValidation()
+    public function testAccessToDataByAttributes($first, $second)
     {
-        $object = new Object();
-        $object->putValidationRule('#data_first#', '#^[\d]+$#');
-        $object->putValidationRule('#data_second#', '#[\w]*#');
-        $object->putValidationRule('#data_(third|fourth)#', function ($key, $data) {
-            if (is_null($data)) {
-                return true;
-            }
-            return false;
-        });
+        $object = $this->_simpleObject($first, $second);
 
-        $object->setData([
-            'data_first'    => 'first data',
-            'data_second'   => 'second data',
-            'data_third'    => 'third data',
-            'data_fourth'   => null,
-        ]);
+        $this->assertEquals($object->data_first, $first);
+        $this->assertNull($object->data_non_exists);
 
-        $this->assertTrue($object->checkErrors());
-        $this->assertEquals($object->returnObjectError()[0], [
-            "message" => "validation_mismatch",
-            "key"=> "data_first",
-            "data"=> "first data",
-            "rule"=> "#^[\d]+$#"
-        ]);
-        $this->assertEquals($object->returnObjectError()[1], [
-            "message"=> "validation_mismatch",
-            "key"=> "data_third",
-            "data"=> "third data",
-            "rule"=>  'Closure [ <user> public method Test\{closure} ] {
-  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 298 - 303
+        $object->data_third = 'data third';
+        $this->assertEquals($object->data_third, 'data third');
+    }
 
-  - Parameters [2] {
-    Parameter #0 [ <required> $key ]
-    Parameter #1 [ <required> $data ]
-  }
-}
-']);
-        $this->assertCount(2, $object->returnObjectError());
+    /**
+     * check echoing of object
+     * with separator changing
+     *
+     * @requires _simpleObject
+     */
+    public function testDisplayObjectAsString()
+    {
+        $object = $this->_simpleObject('first data', 'second data');
+        $this->assertEquals('first data, second data', (string)$object);
+
+        $object->changeSeparator('; ');
+        $this->assertEquals('first data; second data', (string)$object);
     }
 
     /**
