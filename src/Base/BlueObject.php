@@ -200,7 +200,7 @@ trait BlueObject
     public function __get($key)
     {
         $key = $this->_convertKeyNames($key);
-        return $this->getData($key);
+        return $this->toArray($key);
     }
 
     /**
@@ -253,9 +253,9 @@ trait BlueObject
             case substr($method, 0, 3) === 'get':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 if (array_key_exists(0, $arguments)) {
-                    return $this->getData($key, $arguments[0]);
+                    return $this->toArray($key, $arguments[0]);
                 }
-                return $this->getData($key);
+                return $this->toArray($key);
 
             case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
@@ -270,7 +270,7 @@ trait BlueObject
 
             case substr($method, 0, 3) === 'not':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                return $this->_comparator($this->getData($key), $arguments[0], '!==');
+                return $this->_comparator($this->toArray($key), $arguments[0], '!==');
 
             case substr($method, 0, 5) === 'unset':
                 $key = $this->_convertKeyNames(substr($method, 5));
@@ -286,7 +286,7 @@ trait BlueObject
 
             case substr($method, 0, 2) === 'is':
                 $key = $this->_convertKeyNames(substr($method, 2));
-                return $this->_comparator($this->getData($key), $arguments[0], '===');
+                return $this->_comparator($this->toArray($key), $arguments[0], '===');
 
             default:
                 $this->_errorsList['wrong_method'] = get_class($this) . ' - ' . $method;
@@ -302,7 +302,7 @@ trait BlueObject
      */
     public function __set_state()
     {
-        return $this->getData();
+        return $this->toArray();
     }
 
     /**
@@ -313,7 +313,7 @@ trait BlueObject
     public function __toString()
     {
         $this->_prepareData();
-        return implode($this->_separator, $this->getData());
+        return implode($this->_separator, $this->toArray());
     }
 
     /**
@@ -357,7 +357,7 @@ trait BlueObject
     public function serialize($skipObjects = false)
     {
         $this->_prepareData();
-        $temporaryData  = $this->getData();
+        $temporaryData  = $this->toArray();
         $data           = '';
 
         if ($skipObjects) {
@@ -401,6 +401,7 @@ trait BlueObject
      *
      * @param null|string $key
      * @return mixed
+     * @deprecated
      */
     public function getData($key = null)
     {
@@ -507,7 +508,7 @@ trait BlueObject
         }
 
         if ($dataToCheck instanceof Object) {
-            $dataToCheck = $dataToCheck->getData();
+            $dataToCheck = $dataToCheck->toArray();
         }
 
         switch (true) {
@@ -701,7 +702,7 @@ trait BlueObject
     public function toJson()
     {
         $this->_prepareData();
-        return json_encode($this->getData());
+        return json_encode($this->toArray());
     }
 
     /**
@@ -756,23 +757,15 @@ trait BlueObject
     }
 
     /**
-     * return object attributes as array
-     * without DATA
+     * alias to getData
+     * return all data form DATA attribute
      *
+     * @param string|null $key
      * @return mixed
      */
-    public function toArray()
+    public function toArray($key = null)
     {
-        $attributesArray = [];
-
-        foreach ($this as $name => $value) {
-            if ($name === '_DATA') {
-                continue;
-            }
-            $attributesArray[$name] = $value;
-        }
-
-        return $attributesArray;
+        return $this->getData($key);
     }
 
     /**
@@ -793,7 +786,7 @@ trait BlueObject
      */
     public function keyDataChanged($key)
     {
-        $data           = $this->getData($key);
+        $data           = $this->toArray($key);
         $originalData   = $this->returnOriginalData($key);
 
         return $data !== $originalData;
@@ -878,7 +871,7 @@ trait BlueObject
      */
     public function mergeBlueObject(Object $object)
     {
-        $newData = $object->getData();
+        $newData = $object->toArray();
 
         foreach ($newData as $key => $value) {
             $this->setData($key, $value);
@@ -1642,7 +1635,7 @@ trait BlueObject
      */
     public function offsetGet($offset)
     {
-        return $this->getData($offset);
+        return $this->toArray($offset);
     }
 
     /**
@@ -1683,7 +1676,7 @@ trait BlueObject
     public function current()
     {
         current($this->_DATA);
-        return $this->getData($this->key());
+        return $this->toArray($this->key());
     }
 
     /**
@@ -1705,7 +1698,7 @@ trait BlueObject
     public function next()
     {
         next($this->_DATA);
-        return $this->getData($this->key());
+        return $this->toArray($this->key());
     }
 
     /**
