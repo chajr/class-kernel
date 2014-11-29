@@ -899,6 +899,19 @@ trait BlueObject
     }
 
     /**
+     * clear some data after creating new object with data
+     * 
+     * @return $this
+     */
+    protected function _afterAppendDataToNewObject()
+    {
+        $this->_dataChanged     = false;
+        $this->_newKeys         = [];
+
+        return $this;
+    }
+
+    /**
      * apply given json data as object data
      *
      * @param string $data
@@ -912,7 +925,7 @@ trait BlueObject
             $this->setData($jsonData);
         }
 
-        return $this;
+        return $this->_afterAppendDataToNewObject();
     }
 
     /**
@@ -927,7 +940,7 @@ trait BlueObject
         $jsonXml        = json_encode($loadedXml);
         $jsonData       = json_decode($jsonXml, true);
 
-        return $this->setData($jsonData);
+        return $this->setData($jsonData)->_afterAppendDataToNewObject();
     }
 
     /**
@@ -956,7 +969,7 @@ trait BlueObject
             $this->_addException($exception);
         }
 
-        return $this;
+        return $this->_afterAppendDataToNewObject();
     }
 
     /**
@@ -1046,7 +1059,7 @@ trait BlueObject
             $this->setData('default', $data);
         }
 
-        return $this;
+        return $this->_afterAppendDataToNewObject();
     }
 
     /**
@@ -1057,7 +1070,7 @@ trait BlueObject
      */
     protected function _appendStdClass(stdClass $class)
     {
-        return $this->setData(get_object_vars($class));
+        return $this->setData(get_object_vars($class))->_afterAppendDataToNewObject();
     }
 
     /**
@@ -1082,7 +1095,7 @@ trait BlueObject
             $this->setData($data);
         }
 
-        return $this;
+        return $this->_afterAppendDataToNewObject();
     }
 
     /**
