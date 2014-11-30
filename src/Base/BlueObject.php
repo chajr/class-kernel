@@ -722,7 +722,7 @@ trait BlueObject
 
         $xml    = new Xml(['version' => $version]);
         $root   = $xml->createElement('root');
-        $xml    = $this->_arrayToXml($this->getData(), $xml, $addCdata, $root);
+        $xml    = $this->_arrayToXml($this->toArray(), $xml, $addCdata, $root);
 
         $xml->appendChild($root);
 
@@ -752,7 +752,7 @@ trait BlueObject
         $this->_prepareData();
         $data = new stdClass();
 
-        foreach ($this->getData() as $key => $val) {
+        foreach ($this->toArray() as $key => $val) {
             $data->$key = $val;
         }
 

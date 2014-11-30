@@ -93,13 +93,13 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object = $this->_simpleObject($first, $second);
 
         $this->assertEquals($first, $object->getDataFirst());
-        $this->assertEquals($second, $object->getData('data_second'));
+        $this->assertEquals($second, $object->toArray('data_second'));
         $this->assertEquals($second, $object['data_second']);
         $this->assertNull($object->getDataNotExists());
 
         $this->assertEquals(
             $this->_getSimpleData($first, $second),
-            $object->getData()
+            $object->toArray()
         );
     }
 
@@ -279,7 +279,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object->restoreData();
         $this->assertEquals(
             $this->_getSimpleData($first, $second),
-            $object->getData()
+            $object->toArray()
         );
         $this->assertFalse($object->dataChanged());
     }
@@ -396,7 +396,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object->setDataSecond($second);
 
         $this->assertEquals($first . '_modified', $object->getDataFirst());
-        $this->assertEquals('second', $object->getData('data_second'));
+        $this->assertEquals('second', $object->toArray('data_second'));
 
         $object->setData([
             'data_third'    => 'bar',
@@ -430,8 +430,58 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object->setDataSecond($second);
 
         $this->assertEquals($first . '_modified', $object->getDataFirst());
-        $this->assertEquals('second', $object->getData('data_second'));
+        $this->assertEquals('second', $object->toArray('data_second'));
     }
+
+    /**
+     * allow to create object with given json string
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     */
+    public function testCreationWithJsonData($first, $second)
+    {
+        $jsonData = $this->_exampleJsonData($first, $second);
+
+        $object = new Object([
+            'data'  => $jsonData,
+            'type'  => 'json',
+        ]);
+
+        $this->assertEquals($first, $object->getDataFirst());
+        $this->assertEquals($second, $object->toArray('data_second'));
+    }
+
+    /**
+     * allow to create object with given json string
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     */
+//    public function testCreationWithJsonDataWithDataPreparation($first, $second)
+//    {
+//        $jsonData = $this->_exampleJsonData($first, $second);
+//
+//        $object             = new Object;
+//        $dataPreparation    = [
+//            '^data_first$' => function ($key, $val) {
+//                return 'im changed';
+//            }
+//        ];
+//
+//        $object->putPreparationCallback($dataPreparation);
+//        $object->appendJson($jsonData);
+//    }
 
     /**
      * return data for base example
@@ -473,5 +523,65 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             'data_first'    => $first,
             'data_second'   => $second,
         ];
+    }
+
+    /**
+     * create simple xml data to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleSimpleXmlData($first, $second)
+    {
+        
+    }
+
+    /**
+     * create xml data to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleXmlData($first, $second)
+    {
+        
+    }
+
+    /**
+     * create json data to test
+     * 
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleJsonData($first, $second)
+    {
+        return json_encode($this->_getSimpleData($first, $second));
+    }
+
+    /**
+     * create serialized string to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleSerializedData($first, $second)
+    {
+        
+    }
+
+    /**
+     * create std object to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleStdData($first, $second)
+    {
+        
     }
 }

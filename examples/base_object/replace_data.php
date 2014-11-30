@@ -12,11 +12,11 @@ cho $object->getData('second_data');</pre>
 
 <h5>Check that data was changed</h5>
 <code>
-<pre>var_dump($object->hasDataChanged());
-var_dump($objectArray->hasDataChanged());</pre>
+<pre>var_dump($object->dataChanged());
+var_dump($objectArray->dataChanged());</pre>
 </code>
-<pre><?php var_dump($object->hasDataChanged());?></pre>
-<pre><?php var_dump($objectArray->hasDataChanged());?></pre>
+<pre><?php var_dump($object->dataChanged());?></pre>
+<pre><?php var_dump($objectArray->dataChanged());?></pre>
 
 <h5>Check that data in given key was changed</h5>
 <code>
