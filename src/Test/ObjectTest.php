@@ -458,6 +458,27 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * allow to create object with given stdClass object
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testCreationWithStdClassData($first, $second)
+    {
+        $std = $this->_exampleStdData($first, $second);
+
+        $object = new Object($std);
+
+        $this->assertEquals($first, $object->getDataFirst());
+        $this->assertEquals($second, $object->toArray('data_second'));
+    }
+
+    /**
      * allow to create object with given json string
      *
      * @param int $first
@@ -578,10 +599,14 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @param mixed $first
      * @param mixed $second
-     * @return string
+     * @return \stdClass
      */
     protected function _exampleStdData($first, $second)
     {
-        
+        $std                = new \stdClass;
+        $std->data_first    = $first;
+        $std->data_second   = $second;
+
+        return $std;
     }
 }
