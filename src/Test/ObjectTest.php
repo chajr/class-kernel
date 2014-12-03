@@ -10,6 +10,7 @@
 namespace Test;
 
 use ClassKernel\Data\Object;
+use Zend\Serializer\Serializer;
 
 class ObjectTest extends \PHPUnit_Framework_TestCase
 {
@@ -49,7 +50,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             "key"=> "data_third",
             "data"=> "third data",
             "rule"=>  'Closure [ <user> public method Test\{closure} ] {
-  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 26 - 31
+  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 27 - 32
 
   - Parameters [2] {
     Parameter #0 [ <required> $key ]
@@ -479,6 +480,46 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * allow to create object with given serialized array
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testCreationWithSerializedArray($first, $second)
+    {
+        $serialized = $this->_exampleSerializedData($first, $second);
+
+        $object = new Object([
+            'type'  => 'serialized',
+            'data'  => $serialized,
+        ]);
+
+        $this->assertEquals($first, $object->getDataFirst());
+        $this->assertEquals($second, $object->toArray('data_second'));
+    }
+
+    /**
+     * allow to create object with given serialized object
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testCreationWithSerializedObject($first, $second)
+    {
+        
+    }
+
+    /**
      * allow to create object with given json string
      *
      * @param int $first
@@ -587,11 +628,16 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @param mixed $first
      * @param mixed $second
+     * @param bool @object
      * @return string
      */
-    protected function _exampleSerializedData($first, $second)
+    protected function _exampleSerializedData($first, $second, $object = false)
     {
-        
+        if ($object) {
+            return Serializer::serialize((object)[$first, $second]);
+        }
+
+        return Serializer::serialize($this->_getSimpleData($first, $second));
     }
 
     /**
