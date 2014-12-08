@@ -11,6 +11,7 @@ namespace Test;
 
 use ClassKernel\Data\Object;
 use Zend\Serializer\Serializer;
+use StdClass;
 
 class ObjectTest extends \PHPUnit_Framework_TestCase
 {
@@ -50,7 +51,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             "key"=> "data_third",
             "data"=> "third data",
             "rule"=>  'Closure [ <user> public method Test\{closure} ] {
-  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 27 - 32
+  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 28 - 33
 
   - Parameters [2] {
     Parameter #0 [ <required> $key ]
@@ -516,7 +517,17 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testCreationWithSerializedObject($first, $second)
     {
-        
+        $serialized = $this->_exampleSerializedData($first, $second, true);
+        $object = new Object([
+            'type'  => 'serialized',
+            'data'  => $serialized,
+        ]);
+
+        $std = $object->getStdClass();
+        $this->assertObjectHasAttribute('data_first', $std);
+        $this->assertObjectHasAttribute('data_second', $std);
+        $this->assertEquals($first, $object->toArray('std_class')->data_first);
+        $this->assertEquals($second, $std->data_second);
     }
 
     /**
@@ -634,7 +645,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     protected function _exampleSerializedData($first, $second, $object = false)
     {
         if ($object) {
-            return Serializer::serialize((object)[$first, $second]);
+            return Serializer::serialize((object)$this->_getSimpleData($first, $second));
         }
 
         return Serializer::serialize($this->_getSimpleData($first, $second));
