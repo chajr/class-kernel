@@ -531,6 +531,41 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * allow to create object with given xml data
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testCreationSimpleXml($first, $second)
+    {
+        if (is_array($second)) {
+            $second = implode(',', $second);
+        }
+
+        $xml = $this->_exampleSimpleXmlData($first, $second);
+        $object = new Object([
+            'type'  => 'simple_xml',
+            'data'  => $xml,
+        ]);
+
+        $this->assertXmlStringEqualsXmlString(
+            $this->_exampleSimpleXmlData($first, $second),
+            $object->toXml()
+        );
+        $this->assertXmlStringEqualsXmlString(
+            $this->_exampleSimpleXmlData($first, $second),
+            $object->toXml(false)
+        );
+        $this->assertEquals($first, $object->getDataFirst());
+        $this->assertEquals($second, $object->toArray('data_second'));
+    }
+
+    /**
      * allow to create object with given json string
      *
      * @param int $first
@@ -607,7 +642,13 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     protected function _exampleSimpleXmlData($first, $second)
     {
-        
+        $xml = "<?xml version='1.0' encoding='UTF-8'?>
+            <root>
+                <data_first>$first</data_first>
+                <data_second>$second</data_second>
+            </root>";
+
+        return $xml;
     }
 
     /**
