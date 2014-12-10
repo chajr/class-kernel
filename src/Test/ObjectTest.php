@@ -543,10 +543,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testCreationSimpleXml($first, $second)
     {
-        if (is_array($second)) {
-            $second = implode(',', $second);
-        }
-
         $xml = $this->_exampleSimpleXmlData($first, $second);
         $object = new Object([
             'type'  => 'simple_xml',
@@ -561,8 +557,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             $this->_exampleSimpleXmlData($first, $second),
             $object->toXml(false)
         );
-        $this->assertEquals($first, $object->getDataFirst());
-        $this->assertEquals($second, $object->toArray('data_second'));
+
+        $this->assertEquals($this->_convertType($first), $object->getDataFirst());
+        $this->assertEquals($this->_convertType($second), $object->toArray('data_second'));
     }
 
     /**
@@ -642,6 +639,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     protected function _exampleSimpleXmlData($first, $second)
     {
+        $first  = $this->_convertType($first);
+        $second = $this->_convertType($second);
+
         $xml = "<?xml version='1.0' encoding='UTF-8'?>
             <root>
                 <data_first>$first</data_first>
@@ -649,6 +649,35 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             </root>";
 
         return $xml;
+    }
+
+    /**
+     * allow to convert arrays or boolean information to string
+     * 
+     * @param mixed $variable
+     * @return string
+     */
+    protected function _convertType($variable)
+    {
+        switch (true) {
+            case is_null($variable):
+                $converted = 'null';
+                break;
+
+            case is_array($variable):
+                $converted = implode(',', $variable);
+                break;
+
+            case is_bool($variable):
+                $converted = var_export($variable, true);
+                break;
+
+            default:
+                $converted = $variable;
+                break;
+        }
+
+        return $converted;
     }
 
     /**
