@@ -541,7 +541,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      * @requires _simpleObject
      * @requires _exampleStdData
      */
-    public function testCreationSimpleXml($first, $second)
+    public function testCreationWithSimpleXml($first, $second)
     {
         $xml = $this->_exampleSimpleXmlData($first, $second);
         $object = new Object([
@@ -560,6 +560,41 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($this->_convertType($first), $object->getDataFirst());
         $this->assertEquals($this->_convertType($second), $object->toArray('data_second'));
+    }
+
+    /**
+     * allow to create object with given xml data
+     *
+     * @param int $first
+     * @param int $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testCreationWithXml($first, $second)
+    {
+        $xml = $this->_exampleXmlData($first, $second);
+        $object = new Object([
+            'type'  => 'xml',
+            'data'  => $xml,
+        ]);
+
+        $this->assertXmlStringEqualsXmlString(
+            $this->_exampleXmlData($first, $second),
+            $object->toXml()
+        );
+        $this->assertXmlStringEqualsXmlString(
+            $this->_exampleXmlData($first, $second),
+            $object->toXml(false)
+        );
+
+        $this->assertEquals($this->_convertType($first), $object->getDataFirst()[0]);
+        $this->assertEquals(
+            $this->_convertType($second),
+            $object->getDataFirst()['@attributes']['data_second']
+        );
     }
 
     /**
@@ -652,6 +687,26 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * create xml data to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleXmlData($first, $second)
+    {
+        $first  = $this->_convertType($first);
+        $second = $this->_convertType($second);
+
+        $xml = "<?xml version='1.0' encoding='UTF-8'?>
+            <root>
+                <data_first data_second='$second'>$first</data_first>
+            </root>";
+
+        return $xml;
+    }
+
+    /**
      * allow to convert arrays or boolean information to string
      * 
      * @param mixed $variable
@@ -678,18 +733,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         }
 
         return $converted;
-    }
-
-    /**
-     * create xml data to test
-     *
-     * @param mixed $first
-     * @param mixed $second
-     * @return string
-     */
-    protected function _exampleXmlData($first, $second)
-    {
-        
     }
 
     /**
