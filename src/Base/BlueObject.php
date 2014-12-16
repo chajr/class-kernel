@@ -24,6 +24,13 @@ use ReflectionFunction;
 trait BlueObject
 {
     /**
+     * contains name of undefined data
+     * 
+     * @var string
+     */
+    protected $_defaultDataName = 'default';
+
+    /**
      * if there was some errors in object, that variable will be set on true
      *
      * @var bool
@@ -144,6 +151,13 @@ trait BlueObject
     protected $_retrieveOn = true;
 
     /**
+     * inform append* methods that data was set in object creation
+     * 
+     * @var bool
+     */
+    protected $_objectCreation = true;
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -163,31 +177,36 @@ trait BlueObject
 
         switch (true) {
             case $this->_options['type'] === 'json':
-                $this->_appendJson($data);
+                $this->appendJson($data);
                 break;
 
             case $this->_options['type'] === 'xml':
-                $this->_appendXml($data);
+                $this->appendXml($data);
                 break;
 
             case $this->_options['type'] === 'simple_xml':
-                $this->_appendSimpleXml($data);
+                $this->appendSimpleXml($data);
                 break;
 
             case $this->_options['type'] === 'serialized':
-                $this->_appendSerialized($data);
+                $this->appendSerialized($data);
                 break;
 
             case $data instanceof stdClass:
-                $this->_appendStdClass($data);
+                $this->appendStdClass($data);
+                break;
+
+            case is_array($data):
+                $this->appendArray($data);
                 break;
 
             default:
-                $this->_appendArray($data);
+                $this->appendData($this->_defaultDataName, $data);
                 break;
         }
 
         $this->afterInitializeObject();
+        $this->_objectCreation = false;
     }
 
     /**
@@ -261,9 +280,9 @@ trait BlueObject
             case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
                 if (array_key_exists(0, $arguments)) {
-                    return $this->setData($key, $arguments[0]);
+                    return $this->appendData($key, $arguments[0]);
                 }
-                return $this->setData($key);
+                return $this->appendArray($key);
 
             case substr($method, 0, 3) === 'has':
                 $key = $this->_convertKeyNames(substr($method, 3));
@@ -428,16 +447,14 @@ trait BlueObject
      * @param string|array $key
      * @param mixed $data
      * @return Object
+     * @deprecated
      */
     public function setData($key, $data = null)
     {
         if (is_array($key)) {
-            foreach ($key as $dataKey => $data) {
-                $this->_putData($dataKey, $data);
-            }
-
+            $this->appendArray($key);
         } else {
-            $this->_putData($key, $data);
+            $this->appendData($key, $data);
         }
 
         return $this;
@@ -877,7 +894,7 @@ trait BlueObject
         $newData = $object->toArray();
 
         foreach ($newData as $key => $value) {
-            $this->setData($key, $value);
+            $this->appendData($key, $value);
         }
 
         $this->_dataChanged = true;
@@ -917,15 +934,20 @@ trait BlueObject
      * @param string $data
      * @return $this
      */
-    protected function _appendJson($data)
+    public function appendJson($data)
     {
         $jsonData = json_decode($data, true);
 
-        if ($jsonData) {
-            $this->setData($jsonData);
+        if (is_array($jsonData)) {
+            $this->appendArray($jsonData);
+        } else {
+            $this->appendData($this->_defaultDataName, $jsonData);
         }
 
-        return $this->_afterAppendDataToNewObject();
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
@@ -934,13 +956,18 @@ trait BlueObject
      * @param $data string
      * @return $this
      */
-    protected function _appendSimpleXml($data)
+    public function appendSimpleXml($data)
     {
         $loadedXml      = simplexml_load_string($data);
         $jsonXml        = json_encode($loadedXml);
         $jsonData       = json_decode($jsonXml, true);
 
-        return $this->setData($jsonData)->_afterAppendDataToNewObject();
+        $this->appendArray($jsonData);
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
@@ -950,7 +977,7 @@ trait BlueObject
      * @param $data string
      * @return $this
      */
-    protected function _appendXml($data)
+    protected function appendXml($data)
     {
         $xml                        = new Xml();
         $xml->preserveWhiteSpace    = false;
@@ -964,12 +991,15 @@ trait BlueObject
 
         try {
             $temp = $this->_xmlToArray($xml->documentElement);
-            $this->setData($temp);
+            $this->appendArray($temp);
         } catch (DOMException $exception) {
             $this->_addException($exception);
         }
 
-        return $this->_afterAppendDataToNewObject();
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
@@ -1046,20 +1076,38 @@ trait BlueObject
     }
 
     /**
-     * set data given in constructor
+     * allow to set array in object or some other value 
      *
+     * @param array $arrayData
+     * @return $this
+     */
+    protected function appendArray(array $arrayData)
+    {
+        foreach ($arrayData as $dataKey => $data) {
+            $this->_putData($dataKey, $data);
+        }
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
+    }
+
+    /**
+     * allow to set some mixed data type as given key
+     *
+     * @param array|string $key
      * @param mixed $data
      * @return $this
      */
-    protected function _appendArray($data)
+    protected function appendData($key, $data = null)
     {
-        if (is_array($data)) {
-            $this->setData($data);
-        } else {
-            $this->setData('default', $data);
-        }
+        $this->_putData($key, $data);
 
-        return $this->_afterAppendDataToNewObject();
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
@@ -1068,9 +1116,14 @@ trait BlueObject
      * @param stdClass $class
      * @return $this
      */
-    protected function _appendStdClass(stdClass $class)
+    public function appendStdClass(stdClass $class)
     {
-        return $this->setData(get_object_vars($class))->_afterAppendDataToNewObject();
+        $this->appendArray(get_object_vars($class));
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
@@ -1080,7 +1133,7 @@ trait BlueObject
      * @param mixed $data
      * @return $this
      */
-    protected function _appendSerialized($data)
+    public function appendSerialized($data)
     {
         try {
             $data = Serializer::unserialize($data);
@@ -1090,12 +1143,17 @@ trait BlueObject
 
         if (is_object($data)) {
             $name = $this->_convertKeyNames(get_class($data));
-            $this->setData($name, $data);
+            $this->appendData($name, $data);
+        } elseif (is_array($data)) {
+            $this->appendArray($data);
         } else {
-            $this->setData($data);
+            $this->appendData($this->_defaultDataName, $data);
         }
 
-        return $this->_afterAppendDataToNewObject();
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
