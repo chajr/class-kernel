@@ -65,8 +65,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check that object after creation has some errors
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -83,8 +83,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check data returned by get* methods
      * 
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      * 
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -108,8 +108,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check data with has*, is* and not* magic methods
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -135,8 +135,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check add data by set* magic method with information about value exist and object changes
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -162,8 +162,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check add data by setData method with information about value exist and object changes
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -192,8 +192,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check removing and clearing data with information about value exist and object changes
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -234,8 +234,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check restore data for single key
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -262,8 +262,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check restoration for all data in object with change dataChanged value
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -289,8 +289,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check set current data as original data
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -313,8 +313,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check usage object as array (access data and loop processing)
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -339,8 +339,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * check access and setup data by object attributes
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -375,8 +375,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to change data before insert for founded key using closure
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -409,8 +409,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to change data before return for founded key using closure
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -438,8 +438,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to create object with given json string
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -462,8 +462,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to create object with given stdClass object
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -483,8 +483,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to create object with given serialized array
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -507,8 +507,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to create object with given serialized object
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -533,8 +533,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to create object with given xml data
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -565,8 +565,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     /**
      * allow to create object with given xml data
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
@@ -598,30 +598,34 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * allow to create object with given json string
+     * allow to create object with given json string and data preparation
      *
-     * @param int $first
-     * @param int $second
+     * @param mixed $first
+     * @param mixed $second
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
      * @requires _simpleObject
      * @requires _exampleJsonData
      */
-//    public function testCreationWithJsonDataWithDataPreparation($first, $second)
-//    {
-//        $jsonData = $this->_exampleJsonData($first, $second);
-//
-//        $object             = new Object;
-//        $dataPreparation    = [
-//            '^data_first$' => function ($key, $val) {
-//                return 'im changed';
-//            }
-//        ];
-//
-//        $object->putPreparationCallback($dataPreparation);
-//        $object->appendJson($jsonData);
-//    }
+    public function testCreationWithJsonDataWithDataPreparation($first, $second)
+    {
+        $jsonData = $this->_exampleJsonData($first, $second);
+        $val      = 'im changed';
+
+        $object             = new Object;
+        $dataPreparation    = [
+            '#^data_first$#' => function () use ($val) {
+                return $val;
+            }
+        ];
+
+        $object->putPreparationCallback($dataPreparation);
+        $object->appendJson($jsonData);
+
+        $this->assertEquals($val, $object->getDataFirst());
+        $this->assertNotEquals($first, $object->getDataFirst());
+    }
 
     /**
      * return data for base example
