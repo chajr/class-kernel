@@ -977,7 +977,7 @@ trait BlueObject
      * @param $data string
      * @return $this
      */
-    protected function appendXml($data)
+    public function appendXml($data)
     {
         $xml                        = new Xml();
         $xml->preserveWhiteSpace    = false;

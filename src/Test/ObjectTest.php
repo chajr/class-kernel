@@ -16,6 +16,11 @@ use StdClass;
 class ObjectTest extends \PHPUnit_Framework_TestCase
 {
     /**
+     * prefix for some changed data
+     */
+    const IM_CHANGED = 'im changed';
+
+    /**
      * check set current data as original data
      *
      * @requires _getSimpleData
@@ -51,7 +56,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             "key"=> "data_third",
             "data"=> "third data",
             "rule"=>  'Closure [ <user> public method Test\{closure} ] {
-  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 28 - 33
+  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 33 - 38
 
   - Parameters [2] {
     Parameter #0 [ <required> $key ]
@@ -607,23 +612,152 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      * @requires baseDataProvider
      * @requires _simpleObject
      * @requires _exampleJsonData
+     * @requires _dataPreparationCommon
      */
-    public function testCreationWithJsonDataWithDataPreparation($first, $second)
+    public function testCreationWithJsonDataDataPreparation($first, $second)
     {
-        $jsonData = $this->_exampleJsonData($first, $second);
-        $val      = 'im changed';
+        $data = $this->_exampleJsonData($first, $second);
+        $this->_dataPreparationCommon($first, $data, 'json');
+    }
+
+    /**
+     * allow to create object with given std class and data preparation
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     * @requires _dataPreparationCommon
+     */
+    public function testCreationWithStdClassDataDataPreparation($first, $second)
+    {
+        $data = $this->_exampleStdData($first, $second);
+        $this->_dataPreparationCommon($first, $data, 'std');
+    }
+
+    /**
+     * allow to create object with given serialized array and data preparation
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     * @requires _dataPreparationCommon
+     */
+    public function testCreationWithSerializedArrayDataPreparation($first, $second)
+    {
+        $data = $this->_exampleSerializedData($first, $second);
+        $this->_dataPreparationCommon($first, $data, 'serialized_array');
+    }
+
+    /**
+     * allow to create object with given serialized object and data preparation
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     * @requires _dataPreparationCommon
+     */
+    public function testCreationWithSerializedObjectDataPreparation($first, $second)
+    {
+        $data = $this->_exampleSerializedData($first, $second, true);
 
         $object             = new Object;
         $dataPreparation    = [
-            '#^data_first$#' => function () use ($val) {
+            '#^std_class#' => function ($key, $val) {
+                $val->data_first = self::IM_CHANGED;
                 return $val;
+            }
+        ];
+        $object->putPreparationCallback($dataPreparation);
+        $object->appendSerialized($data);
+
+        $this->assertEquals(self::IM_CHANGED, $object->getStdClass()->data_first);
+        $this->assertNotEquals($first, $object->getStdClass()->data_first);
+    }
+
+    /**
+     * allow to create object with given simple xml data and data preparation
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     * @requires _dataPreparationCommon
+     */
+    public function testCreationWithSimpleXmlDataPreparation($first, $second)
+    {
+        $data = $this->_exampleSimpleXmlData($first, $second);
+        $this->_dataPreparationCommon($first, $data, 'simple_xml');
+    }
+
+    /**
+     * allow to create object with given xml data and data preparation
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     * @requires _dataPreparationCommon
+     */
+    public function testCreationWithXmlDataPreparation($first, $second)
+    {
+        $data = $this->_exampleXmlData($first, $second);
+        $this->_dataPreparationCommon($first, $data, 'xml');
+    }
+
+    /**
+     * launch common object creation and assertion
+     * 
+     * @param mixed $first
+     * @param mixed $data
+     * @param string $type
+     */
+    protected function _dataPreparationCommon($first, $data, $type)
+    {
+        $object             = new Object;
+        $dataPreparation    = [
+            '#^data_first$#' => function () {
+                return self::IM_CHANGED;
             }
         ];
 
         $object->putPreparationCallback($dataPreparation);
-        $object->appendJson($jsonData);
+        switch ($type) {
+            case 'json':
+                $object->appendJson($data);
+                break;
+            case 'std':
+                $object->appendStdClass($data);
+                break;
+            case 'serialized_array':
+                $object->appendSerialized($data);
+                break;
+            case 'xml':
+                $object->appendXml($data);
+                break;
+            case 'simple_xml':
+                $object->appendSimpleXml($data);
+                break;
+        }
 
-        $this->assertEquals($val, $object->getDataFirst());
+        $this->assertEquals(self::IM_CHANGED, $object->getDataFirst());
         $this->assertNotEquals($first, $object->getDataFirst());
     }
 
