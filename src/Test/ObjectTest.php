@@ -385,7 +385,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      */
     public function testDataPreparationOnEnter($first, $second)
     {
@@ -419,7 +418,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      */
     public function testDataPreparationOnReturn($first, $second)
     {
@@ -448,7 +446,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      */
     public function testCreationWithJsonData($first, $second)
@@ -472,7 +469,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleStdData
      */
     public function testCreationWithStdClassData($first, $second)
@@ -493,7 +489,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleStdData
      */
     public function testCreationWithSerializedArray($first, $second)
@@ -517,7 +512,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleStdData
      */
     public function testCreationWithSerializedObject($first, $second)
@@ -543,7 +537,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleStdData
      */
     public function testCreationWithSimpleXml($first, $second)
@@ -575,7 +568,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleStdData
      */
     public function testCreationWithXml($first, $second)
@@ -610,7 +602,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      * @requires _dataPreparationCommon
      */
@@ -628,7 +619,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      * @requires _dataPreparationCommon
      */
@@ -646,7 +636,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      * @requires _dataPreparationCommon
      */
@@ -664,7 +653,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      * @requires _dataPreparationCommon
      */
@@ -694,7 +682,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      * @requires _dataPreparationCommon
      */
@@ -712,7 +699,6 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider baseDataProvider
      * @requires baseDataProvider
-     * @requires _simpleObject
      * @requires _exampleJsonData
      * @requires _dataPreparationCommon
      */
@@ -720,6 +706,34 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     {
         $data = $this->_exampleXmlData($first, $second);
         $this->_dataPreparationCommon($first, $data, 'xml');
+    }
+
+    /**
+     * export object as json data with data return callback
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleJsonData
+     */
+    public function testExportObjectAsJson($first, $second)
+    {
+        $data   = $this->_exampleJsonData($first, $second);
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertEquals($data, $object->toJson());
+
+        $object->putReturnCallback([
+            '#^data_first$#' => function () {
+                return self::IM_CHANGED;
+            }
+        ]);
+        $data = $this->_exampleJsonData(self::IM_CHANGED, $second);
+
+        $this->assertEquals($data, $object->toJson());
     }
 
     /**
