@@ -737,6 +737,34 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * export object as std class data with data return callback
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testExportObjectAsStdClass($first, $second)
+    {
+        $data   = $this->_exampleStdData($first, $second);
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertEquals($data, $object->toStdClass());
+
+        $object->putReturnCallback([
+            '#^data_first$#' => function () {
+                return self::IM_CHANGED;
+            }
+        ]);
+        $data = $this->_exampleStdData(self::IM_CHANGED, $second);
+
+        $this->assertEquals($data, $object->toStdClass());
+    }
+
+    /**
      * launch common object creation and assertion
      * 
      * @param mixed $first
