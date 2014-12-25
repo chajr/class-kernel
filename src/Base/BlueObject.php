@@ -685,9 +685,12 @@ trait BlueObject
      * @param string $separator
      * @return string
      */
-    public function toString($separator)
+    public function toString($separator = null)
     {
-        $this->_separator = $separator;
+        if (!is_null($separator)) {
+            $this->_separator = $separator;
+        }
+
         $this->_prepareData();
         return $this->__toString();
     }
