@@ -1084,7 +1084,7 @@ trait BlueObject
      * @param array $arrayData
      * @return $this
      */
-    protected function appendArray(array $arrayData)
+    public function appendArray(array $arrayData)
     {
         foreach ($arrayData as $dataKey => $data) {
             $this->_putData($dataKey, $data);
@@ -1103,7 +1103,7 @@ trait BlueObject
      * @param mixed $data
      * @return $this
      */
-    protected function appendData($key, $data = null)
+    public function appendData($key, $data)
     {
         $this->_putData($key, $data);
 
