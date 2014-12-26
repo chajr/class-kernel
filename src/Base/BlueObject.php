@@ -382,7 +382,7 @@ trait BlueObject
 
         if ($skipObjects) {
             $temporaryData = $this->traveler(
-                '_skipObject',
+                'self::_skipObject',
                 null,
                 $temporaryData,
                 false,
@@ -1450,10 +1450,11 @@ trait BlueObject
     /**
      * replace object by string
      *
-     * @param $value
+     * @param string $key
+     * @param mixed $value
      * @return string
      */
-    protected function _skipObject($value)
+    protected function _skipObject($key, $value)
     {
         if (is_object($value)) {
             return '{;skipped_object;}';
