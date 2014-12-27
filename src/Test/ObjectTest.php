@@ -765,6 +765,128 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * export object as string (data separated by defined separator) data with data return callback
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleStdData
+     */
+    public function testExportObjectAsString($first, $second)
+    {
+        $string = "$first, $second";
+
+        $object = $this->_simpleObject($first, $second);
+        $this->assertEquals($string, $object->toString());
+
+        $object->putReturnCallback([
+            '#^data_second$#' => function () {
+                return self::IM_CHANGED;
+            }
+        ]);
+        $string = "$first, " . self::IM_CHANGED;
+
+        $this->assertEquals($string, (string)$object);
+    }
+
+    /**
+     * export object as serialized string with data return callback
+     * 
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleSerializedData
+     */
+    public function testExportObjectAsSerializedString($first, $second)
+    {
+        $data = $this->_exampleSerializedData($first, $second);
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertEquals($data, $object->serialize());
+
+        $object->putReturnCallback([
+            '#^data_first$#' => function () {
+                return self::IM_CHANGED;
+            }
+        ]);
+        $data = $this->_exampleSerializedData(self::IM_CHANGED, $second);
+
+        $this->assertEquals($data, $object->serialize());
+    }
+
+    /**
+     * export object as serialized string (with object) with data return callback
+     * 
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _getSimpleData
+     */
+    public function testExportObjectAsSerializedStringWithObject($first, $second)
+    {
+        $object = new Object();
+        $object->putPreparationCallback([
+            '#^data_second$#' => function ($key, $data) {
+                return (object)$data;
+            }
+        ]);
+        $object->appendArray($this->_getSimpleData($first, $second));
+        $data = $this->_exampleSerializedData($first, '{;skipped_object;}');
+
+        $this->assertEquals($data, $object->serialize(true));
+    }
+
+    /**
+     * export object as xml with data return callback
+     * 
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleSimpleXmlData
+     */
+    public function testExportObjectAsXml($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+        $data   = $this->_exampleSimpleXmlData($first, $second);
+
+        $object->putReturnCallback([
+            '#^data_second$#' => function ($key, $val) {
+                if (is_array($val)) {
+                    return implode(',', $val);
+                }
+
+                return $val;
+            },
+            '#.*#' => function ($key, $val) {
+                switch (true) {
+                    case is_null($val):
+                        return 'null';
+                    case $val === true:
+                        return 'true';
+                    case $val === false:
+                        return 'false';
+                }
+
+                return $val;
+            }
+        ]);
+        $xml = $object->toXml(false);
+
+        $this->assertXmlStringEqualsXmlString($data, $xml);
+    }
+
+    /**
      * launch common object creation and assertion
      * 
      * @param mixed $first
