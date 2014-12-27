@@ -182,10 +182,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($object->hasData('data_fourth'));
         $this->assertFalse($object->dataChanged());
 
-        $object->setData([
-            'data_third'    => 3,
-            'data_fourth'   => 4,
-        ]);
+        $object->appendData('data_third', 3);
+        $object->appendData('data_fourth', 4);
 
         $this->assertTrue($object->hasDataThird());
         $this->assertTrue($object->hasData('data_fourth'));
@@ -234,6 +232,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($object->checkErrors());
         $this->assertArrayHasKey('wrong_method', $object->returnObjectError());
+
+        $object->removeObjectError();
+        $this->assertFalse($object->checkErrors());
     }
 
     /**
@@ -668,7 +669,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             }
         ];
         $object->putPreparationCallback($dataPreparation);
-        $object->appendSerialized($data);
+        $object->unserialize($data);
 
         $this->assertEquals(self::IM_CHANGED, $object->getStdClass()->data_first);
         $this->assertNotEquals($first, $object->getStdClass()->data_first);

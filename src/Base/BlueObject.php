@@ -365,7 +365,9 @@ trait BlueObject
      */
     public function removeObjectError($key = null)
     {
-        return $this->_genericDestroy($key, 'error_list');
+        $this->_genericDestroy($key, 'error_list');
+        $this->_hasErrors = false;
+        return $this;
     }
 
     /**
@@ -407,13 +409,7 @@ trait BlueObject
      */
     public function unserialize($string)
     {
-        $this->unsetData();
-        $this->__construct([
-            'data'  => $string,
-            'type'  => 'serialized'
-        ]);
-
-        return $this;
+        return $this->appendSerialized($string);
     }
 
     /**
