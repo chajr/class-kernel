@@ -476,7 +476,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     {
         $std = $this->_exampleStdData($first, $second);
 
-        $object = new Object($std);
+        $object = new Object(['data' => $std]);
 
         $this->assertEquals($first, $object->getDataFirst());
         $this->assertEquals($second, $object->toArray('data_second'));
@@ -1050,7 +1050,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     protected function _simpleObject($first, $second)
     {
-        return new Object($this->_getSimpleData($first, $second));
+        return new Object(['data' => $this->_getSimpleData($first, $second)]);
     }
 
     /**

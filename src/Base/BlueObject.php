@@ -166,12 +166,8 @@ trait BlueObject
      */
     public function __construct($options = [])
     {
-        if (array_key_exists('data', $options)) {
-            $this->_options = array_merge($this->_options, $options);
-            $data           = $this->_options['data'];
-        } else {
-            $data = $options;
-        }
+        $this->_options = array_merge($this->_options, $options);
+        $data           = $this->_options['data'];
 
         $this->initializeObject($data);
 
@@ -201,7 +197,6 @@ trait BlueObject
                 break;
 
             default:
-                $this->appendData($this->_defaultDataName, $data);
                 break;
         }
 
