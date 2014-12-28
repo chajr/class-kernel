@@ -387,7 +387,6 @@ trait BlueObject
                 'self::_skipObject',
                 null,
                 $temporaryData,
-                false,
                 true
             );
         }
@@ -532,12 +531,12 @@ trait BlueObject
                 return $this->_comparator($dataToCheck, $data, $operator);
             // no break, always will return boolean value
 
+            case array_key_exists($key, $data):
+                return $this->_comparator($dataToCheck, $data[$key], $operator);
+            // no break, always will return boolean value
+
             default:
-                if (array_key_exists($key, $data)) {
-                    return $this->_comparator($dataToCheck, $data[$key], $operator);
-                } else {
-                    return false;
-                }
+                return false;
             // no break, always will return boolean value
         }
     }
@@ -562,12 +561,12 @@ trait BlueObject
             // no break, always will return boolean value
 
             case '==':
-                return $dataOrigin !== $dataCheck;
+                return $dataOrigin == $dataCheck;
             // no break, always will return boolean value
 
             case '!=':
             case '<>':
-                return $dataOrigin !== $dataCheck;
+                return $dataOrigin != $dataCheck;
             // no break, always will return boolean value
 
             case '<':
@@ -827,7 +826,7 @@ trait BlueObject
         $recursive = false
     ) {
         if (!$data) {
-            $data = $this->_DATA;
+            $data =& $this->_DATA;
         }
 
         foreach ($data as $key => $value) {

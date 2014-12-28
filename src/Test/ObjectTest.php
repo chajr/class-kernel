@@ -888,6 +888,106 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * test comparison of some data in object
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testDataComparison($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $bool = $object->compareData('5', 'data_first', '===');
+        $this->assertFalse($bool);
+
+        $object->setDataFirst(5);
+        $bool = $object->compareData(5, 'data_first', '==');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData('5', 'data_first', '===', true);
+        $this->assertFalse($bool);
+    }
+
+    /**
+     * test comparison of whole objects
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testObjectComparison($first, $second)
+    {
+        $object         = $this->_simpleObject($first, $second);
+        $newObject      = $this->_simpleObject($second, $first);
+        $anotherObject  = $this->_simpleObject($second, $first);
+
+        $bool = $object->compareData($newObject);
+        $this->assertFalse($bool);
+
+        $bool = $newObject->compareData($anotherObject);
+        $this->assertTrue($bool);
+    }
+
+    /**
+     * test method to walk on all elements in object and call on them given function
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testDataTraveling($first, $second)
+    {
+        $object     = $this->_simpleObject($first, $second);
+        $function   = function ($key, $val) {
+            return self::IM_CHANGED;
+        };
+
+        $object->traveler($function, null, null, true);
+
+        $this->assertEquals(self::IM_CHANGED, $object->getDataFirst());
+        if (is_array($object->getDataSecond())) {
+            $this->assertEquals(self::IM_CHANGED, $object->getDataSecond()[0]);
+        } else {
+            $this->assertEquals(self::IM_CHANGED, $object->getDataSecond());
+        }
+    }
+
+    /**
+     * test object merging
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testObjectMerging($first, $second)
+    {
+        $object         = $this->_simpleObject($first, $second);
+        $newObject      = $this->_simpleObject($second, $first);
+
+        $object->mergeBlueObject($newObject);
+
+        $this->assertEquals($first, $object->getDataSecond());
+        if (is_array($object->getDataFirst())) {
+            $this->assertEquals($second[0], $object->getDataFirst()[0]);
+        } else {
+            $this->assertEquals($second, $object->getDataFirst());
+        }
+    }
+
+    /**
      * launch common object creation and assertion
      * 
      * @param mixed $first
