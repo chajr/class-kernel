@@ -82,6 +82,8 @@ trait BlueObject
     protected $_options = [
         'data'              => null,
         'type'              => null,
+        'validation'        => [],
+        'preparation'       => [],
     ];
 
     /**
@@ -169,7 +171,9 @@ trait BlueObject
         $this->_options = array_merge($this->_options, $options);
         $data           = $this->_options['data'];
 
-        $this->initializeObject($data);
+        $this->putValidationRule($this->_options['validation'])
+            ->putPreparationCallback($this->_options['preparation'])
+            ->initializeObject($data);
 
         switch (true) {
             case $this->_options['type'] === 'json':

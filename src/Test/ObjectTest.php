@@ -21,9 +21,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     const IM_CHANGED = 'im changed';
 
     /**
-     * check set current data as original data
-     *
-     * @requires _getSimpleData
+     * check data validation
      */
     public function testDataValidation()
     {
@@ -56,7 +54,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             "key"=> "data_third",
             "data"=> "third data",
             "rule"=>  'Closure [ <user> public method Test\{closure} ] {
-  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 33 - 38
+  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 31 - 36
 
   - Parameters [2] {
     Parameter #0 [ <required> $key ]
@@ -65,6 +63,45 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 }
 ']);
         $this->assertCount(2, $object->returnObjectError());
+    }
+
+    /**
+     * check data validation in constructor
+     */
+    public function testDataValidationInConstructor()
+    {
+        $object = new Object([
+            'data'          => [
+                'data_first'    => 'first data',
+                'data_second'   => 4535,
+            ],
+            'validation'    => [
+                '#data_first#'  => '#^[\w ]+$#',
+                '#data_second#' => '#^[\d]+$#',
+            ],
+        ]);
+
+        $this->assertFalse($object->checkErrors());
+    }
+
+    /**
+     * check data preparation in constructor
+     */
+    public function testDataPreparationInConstructor()
+    {
+        $object = new Object([
+            'data'          => [
+                'data_first'    => 'first data',
+                'data_second'   => 4535,
+            ],
+            'preparation'    => [
+                '#^data_[\w]+#'  => function () {
+                    return self::IM_CHANGED;
+                },
+            ],
+        ]);
+
+        $this->assertEquals(self::IM_CHANGED, $object->getDataFirst());
     }
 
     /**
