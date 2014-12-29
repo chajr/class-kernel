@@ -160,6 +160,34 @@ trait BlueObject
     protected $_objectCreation = true;
 
     /**
+     * csv variable delimiter
+     * 
+     * @var string
+     */
+    protected $_csvDelimiter = ';';
+
+    /**
+     * csv enclosure
+     * 
+     * @var string
+     */
+    protected $_csvEnclosure = '"';
+
+    /**
+     * csv escape character
+     * 
+     * @var string
+     */
+    protected $_csvEscape = '\\';
+
+    /**
+     * csv line delimiter (single object element)
+     * 
+     * @var string
+     */
+    protected $_csvLineDelimiter = "\n";
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -190,6 +218,10 @@ trait BlueObject
 
             case $this->_options['type'] === 'serialized':
                 $this->appendSerialized($data);
+                break;
+
+            case $this->_options['type'] === 'csv':
+                $this->appendCsv($data);
                 break;
 
             case $data instanceof stdClass:
@@ -1151,6 +1183,139 @@ trait BlueObject
             return $this->_afterAppendDataToNewObject();
         }
         return $this;
+    }
+
+    /**
+     * allow to set csv data into object
+     * 
+     * @param string $data
+     * @return $this
+     */
+    public function appendCsv($data)
+    {
+        $counter    = 0;
+        $rows       = str_getcsv($data, $this->_csvLineDelimiter);
+
+        foreach ($rows as $row) {
+            $rowData = str_getcsv(
+                $row,
+                $this->_csvDelimiter,
+                $this->_csvEnclosure,
+                $this->_csvEscape
+            );
+
+            $this->_putData($this->_integerKeyPrefix . $counter, $rowData);
+
+            $counter++;
+        }
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function returnCsvDelimiter()
+    {
+        return $this->_csvDelimiter;
+    }
+
+    /**
+     * @return string
+     */
+    public function returnCsvEnclosure()
+    {
+        return $this->_csvEnclosure;
+    }
+
+    /**
+     * @return string
+     */
+    public function returnCsvEscape()
+    {
+        return $this->_csvEscape;
+    }
+
+    /**
+     * @return string
+     */
+    public function returnCsvLineDelimiter()
+    {
+        return $this->_csvLineDelimiter;
+    }
+
+    /**
+     * change delimiter for csv row data (give only one character)
+     * 
+     * @param string $char
+     * @return $this
+     */
+    public function changeCsvDelimiter($char)
+    {
+        $this->_csvDelimiter = $char;
+        return $this;
+    }
+
+    /**
+     * change enclosure for csv row data (give only one character)
+     * 
+     * @param string $char
+     * @return $this
+     */
+    public function changeCsvEnclosure($char)
+    {
+        $this->_csvEnclosure = $char;
+        return $this;
+    }
+
+    /**
+     * change data escape for csv row data (give only one character)
+     *
+     * @param string $char
+     * @return $this
+     */
+    public function changeCsvEscape($char)
+    {
+        $this->_csvEscape = $char;
+        return $this;
+    }
+
+    /**
+     * change data row delimiter (give only one character)
+     *
+     * @param string $char
+     * @return $this
+     */
+    public function changeCsvLineDelimiter($char)
+    {
+        $this->_csvLineDelimiter = $char;
+        return $this;
+    }
+
+    /**
+     * export object as csv data
+     * 
+     * @return string
+     */
+    public function toCsv()
+    {
+        $csv = '';
+
+        foreach ($this->toArray() as $csvRow) {
+            if (is_array($csvRow)) {
+                $data = implode($this->_csvDelimiter, $csvRow);
+            } else {
+                $data = $csvRow;
+            }
+
+            $csv .= $data . $this->_csvLineDelimiter;
+        }
+
+        return $csv;
     }
 
     /**
