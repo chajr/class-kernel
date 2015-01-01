@@ -1025,6 +1025,51 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * allow to create object with given csv string
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testCreationWithCsvData($first, $second)
+    {
+        $object = new Object();
+        $csv    = $this->_exampleCsvData($first, $second);
+
+        $object->changeCsvDelimiter(',');
+        $object->appendCsv($csv);
+
+        $this->assertEquals($this->_convertType($first), $object->getIntegerKey0()[0]);
+
+        if (count($second) > 1) {
+            $this->assertEquals($second, $object->getIntegerKey1());
+        } else {
+            $this->assertEquals($this->_convertType($second), $object->getIntegerKey1()[0]);
+        }
+    }
+
+    /**
+     * test export object as csv
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testExportObjectAsCsvData($first, $second)
+    {
+        $object = $this->_simpleObject($this->_convertType($first), $this->_convertType($second));
+        $object->changeCsvDelimiter(',');
+
+        $this->assertEquals($this->_exampleCsvData($first, $second), $object->toCsv());
+    }
+
+    /**
      * launch common object creation and assertion
      * 
      * @param mixed $first
@@ -1103,6 +1148,22 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             'data_first'    => $first,
             'data_second'   => $second,
         ];
+    }
+
+    /**
+     * create simple csv data to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @return string
+     */
+    protected function _exampleCsvData($first, $second)
+    {
+        $first  = $this->_convertType($first);
+        $second = $this->_convertType($second);
+        $csv    = $first . "\n" . $second;
+
+        return $csv;
     }
 
     /**

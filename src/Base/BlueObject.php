@@ -80,10 +80,11 @@ trait BlueObject
      * @var array
      */
     protected $_options = [
-        'data'              => null,
-        'type'              => null,
-        'validation'        => [],
-        'preparation'       => [],
+        'data'                  => null,
+        'type'                  => null,
+        'validation'            => [],
+        'preparation'           => [],
+        'integer_key_prefix'    => null,
     ];
 
     /**
@@ -92,7 +93,7 @@ trait BlueObject
      *
      * @var string
      */
-    protected $_integerKeyPrefix = 'integer_key';
+    protected $_integerKeyPrefix = 'integer_key_';
 
     /**
      * separator for data to return as string
@@ -202,6 +203,10 @@ trait BlueObject
         $this->putValidationRule($this->_options['validation'])
             ->putPreparationCallback($this->_options['preparation'])
             ->initializeObject($data);
+
+        if ($this->_options['integer_key_prefix']) {
+            $this->_integerKeyPrefix = $this->_options['integer_key_prefix'];
+        }
 
         switch (true) {
             case $this->_options['type'] === 'json':
@@ -1101,7 +1106,17 @@ trait BlueObject
      */
     protected function _stringToIntegerKey($key)
     {
-        return str_replace($this->_integerKeyPrefix . '_', '', $key);
+        return str_replace($this->_integerKeyPrefix, '', $key);
+    }
+
+    /**
+     * return set up integer key prefix value
+     * 
+     * @return string
+     */
+    public function returnIntegerKeyPrefix()
+    {
+        return $this->_integerKeyPrefix;
     }
 
     /**
@@ -1315,7 +1330,7 @@ trait BlueObject
             $csv .= $data . $this->_csvLineDelimiter;
         }
 
-        return $csv;
+        return rtrim($csv, $this->_csvLineDelimiter);
     }
 
     /**
@@ -1600,7 +1615,7 @@ trait BlueObject
     protected function _integerToStringKey($key)
     {
         if (is_numeric($key)) {
-            $key = $this->_integerKeyPrefix . '_' . $key;
+            $key = $this->_integerKeyPrefix . $key;
         }
 
         return $key;
