@@ -84,7 +84,8 @@ trait BlueObject
         'type'                  => null,
         'validation'            => [],
         'preparation'           => [],
-        'integer_key_prefix'    => null,
+        'integer_key_prefix'    => 'integer_key_',
+        'ini_section'           => false,
     ];
 
     /**
@@ -93,7 +94,7 @@ trait BlueObject
      *
      * @var string
      */
-    protected $_integerKeyPrefix = 'integer_key_';
+    protected $_integerKeyPrefix;
 
     /**
      * separator for data to return as string
@@ -189,6 +190,13 @@ trait BlueObject
     protected $_csvLineDelimiter = "\n";
 
     /**
+     * allow to process [section] as array key
+     * 
+     * @var bool
+     */
+    protected $_processIniSection;
+
+    /**
      * create new Blue Object, optionally with some data
      * there are some types we can give to convert data to Blue Object
      * like: json, xml, serialized or stdClass default is array
@@ -197,16 +205,14 @@ trait BlueObject
      */
     public function __construct($options = [])
     {
-        $this->_options = array_merge($this->_options, $options);
-        $data           = $this->_options['data'];
+        $this->_options             = array_merge($this->_options, $options);
+        $data                       = $this->_options['data'];
+        $this->_integerKeyPrefix    = $this->_options['integer_key_prefix'];
+        $this->_processIniSection   = $this->_options['ini_section'];
 
         $this->putValidationRule($this->_options['validation'])
             ->putPreparationCallback($this->_options['preparation'])
             ->initializeObject($data);
-
-        if ($this->_options['integer_key_prefix']) {
-            $this->_integerKeyPrefix = $this->_options['integer_key_prefix'];
-        }
 
         switch (true) {
             case $this->_options['type'] === 'json':
@@ -227,6 +233,10 @@ trait BlueObject
 
             case $this->_options['type'] === 'csv':
                 $this->appendCsv($data);
+                break;
+
+            case $this->_options['type'] === 'ini':
+                $this->appendIni($data);
                 break;
 
             case $data instanceof stdClass:
@@ -1198,6 +1208,83 @@ trait BlueObject
             return $this->_afterAppendDataToNewObject();
         }
         return $this;
+    }
+
+    /**
+     * allow to set ini data into object
+     * 
+     * @param string $data
+     * @return $this
+     */
+    public function appendIni($data)
+    {
+        $array = parse_ini_string($data, $this->_processIniSection, INI_SCANNER_RAW);
+
+        if ($array === false) {
+            $this->_hasErrors = true;
+            $this->_errorsList[] = 'parse_ini_string';
+            return $this;
+        }
+
+        $this->appendArray($array);
+        return $this;
+    }
+
+    /**
+     * return information about ini section processing
+     * 
+     * @return bool
+     */
+    public function returnProcessIniSection()
+    {
+        return $this->_processIniSection;
+    }
+
+    /**
+     * enable or disable ini section processing
+     * 
+     * @param bool $bool
+     * @return $this
+     */
+    public function processIniSection($bool)
+    {
+        $this->_processIniSection = $bool;
+        return $this;
+    }
+
+    /**
+     * export object as ini string
+     * 
+     * @return string
+     */
+    public function toIni()
+    {
+        $ini = '';
+
+        foreach ($this->toArray() as $key => $iniRow) {
+            $this->_appendIniData($ini, $key, $iniRow);
+        }
+
+        return $ini;
+    }
+
+    /**
+     * append ini data to string
+     * 
+     * @param string $ini
+     * @param string $key
+     * @param mixed $iniRow
+     */
+    protected function _appendIniData(&$ini, $key, $iniRow)
+    {
+        if ($this->_processIniSection && is_array($iniRow)) {
+            $ini .= '[' . $key . ']' . "\n";
+            foreach ($iniRow as $rowKey => $rowData) {
+                $ini .= $rowKey . ' = ' . $rowData . "\n";
+            }
+        } else {
+            $ini .= $key . ' = ' . $iniRow . "\n";
+        }
     }
 
     /**

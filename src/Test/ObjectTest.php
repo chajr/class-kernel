@@ -1070,6 +1070,72 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * allow to create object with given ini string
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleIniData
+     */
+    public function testCreationWithIniData($first, $second)
+    {
+        $object = new Object();
+        $ini    = $this->_exampleIniData($first, $second);
+
+        $object->appendIni($ini);
+        $this->assertEquals($this->_convertType($first), $object->getDataFirst());
+        $this->assertEquals($this->_convertType($second), $object->getDataSecond());
+
+        $object = new Object(['ini_section' => true]);
+        $ini    = $this->_exampleIniData($first, $second, true);
+
+        $object->appendIni($ini);
+        $this->assertEquals($this->_convertType($first), $object->getDataFirst());
+        if (count($second) > 1) {
+            $this->assertEquals($second, $object->getDataSecond());
+        } else {
+            $this->assertEquals(
+                $this->_convertType($second),
+                $object->getDataSecond()
+            );
+        }
+    }
+
+    /**
+     * test export object as ini
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     * @requires _exampleIniData
+     */
+    public function testExportObjectAsIniData($first, $second)
+    {
+        $object = $this->_simpleObject($this->_convertType($first), $this->_convertType($second));
+        $ini    = $object->toIni();
+
+        $this->assertEquals($this->_exampleIniData($first, $second), rtrim($ini));
+
+        if (!is_array($second)) {
+            $second = $this->_convertType($second);
+        }
+        $object = $this->_simpleObject($this->_convertType($first), $second);
+        $object->processIniSection(true);
+        $ini    = $object->toIni();
+
+        $this->assertEquals(
+            rtrim($this->_exampleIniData($first, $second, true)),
+            rtrim($ini)
+        );
+    }
+
+    /**
      * launch common object creation and assertion
      * 
      * @param mixed $first
@@ -1164,6 +1230,33 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $csv    = $first . "\n" . $second;
 
         return $csv;
+    }
+
+    /**
+     * create simple ini data to test
+     *
+     * @param mixed $first
+     * @param mixed $second
+     * @param bool $section
+     * @return string
+     */
+    protected function _exampleIniData($first, $second, $section = false)
+    {
+        $ini    = '';
+        $first  = $this->_convertType($first);
+        $ini    .= 'data_first = ' . $first . "\n";
+
+        if ($section && is_array($second)) {
+            $ini .= '[data_second]' . "\n";
+            foreach ($second as $key => $data) {
+                $ini .= $key . ' = ' . $data . "\n";
+            }
+        } else {
+            $second = $this->_convertType($second);
+            $ini .= 'data_second = ' . $second;
+        }
+
+        return $ini;
     }
 
     /**
