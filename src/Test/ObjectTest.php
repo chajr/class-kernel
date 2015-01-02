@@ -172,6 +172,19 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($object->notDataFirst('1'));
         $this->assertFalse($object->notDataFirst($first));
+
+        $this->assertTrue($object->isDataFirst(function ($key, $val) use ($first) {
+            if ($val === $first) {
+                return true;
+            }
+            return false;
+        }));
+        $this->assertTrue($object->notDataFirst(function ($key, $val) {
+            if ($val !== self::IM_CHANGED) {
+                return true;
+            }
+            return false;
+        }));
     }
 
     /**
@@ -947,6 +960,14 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $bool = $object->compareData('5', 'data_first', '===', true);
         $this->assertFalse($bool);
+
+        $bool = $object->compareData(5, 'data_first', function ($key, $dataToCheck, $data) {
+            if (is_int($dataToCheck) && $data[$key] === $dataToCheck) {
+                return true;
+            }
+            return false;
+        });
+        $this->assertTrue($bool);
     }
 
     /**

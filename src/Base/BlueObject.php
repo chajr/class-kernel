@@ -336,7 +336,13 @@ trait BlueObject
 
             case substr($method, 0, 3) === 'not':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                return $this->_comparator($this->toArray($key), $arguments[0], '!==');
+                $val = $this->toArray($key);
+
+                if (is_callable($arguments[0])) {
+                    return call_user_func_array($arguments[0], [$key, $val, $this]);
+                }
+
+                return $this->_comparator($val, $arguments[0], '!==');
 
             case substr($method, 0, 5) === 'unset':
                 $key = $this->_convertKeyNames(substr($method, 5));
@@ -352,7 +358,13 @@ trait BlueObject
 
             case substr($method, 0, 2) === 'is':
                 $key = $this->_convertKeyNames(substr($method, 2));
-                return $this->_comparator($this->toArray($key), $arguments[0], '===');
+                $val = $this->toArray($key);
+
+                if (is_callable($arguments[0])) {
+                    return call_user_func_array($arguments[0], [$key, $val, $this]);
+                }
+
+                return $this->_comparator($val, $arguments[0], '===');
 
             default:
                 $this->_errorsList['wrong_method'] = get_class($this) . ' - ' . $method;
@@ -554,7 +566,7 @@ trait BlueObject
      * if return null, comparator symbol was wrong
      *
      * @param mixed $dataToCheck
-     * @param string $operator
+     * @param array|string|\Closure $operator
      * @param string|null $key
      * @param boolean $origin
      * @return bool|null
@@ -570,6 +582,10 @@ trait BlueObject
 
         if ($dataToCheck instanceof Object) {
             $dataToCheck = $dataToCheck->toArray();
+        }
+
+        if (is_callable($operator)) {
+            return call_user_func_array($operator, [$key, $dataToCheck, $data, $this]);
         }
 
         switch (true) {
