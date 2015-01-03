@@ -38,7 +38,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     protected $_pageSize = 10;
 
     /**
-     * 
+     * number of current page
      * 
      * @var int
      */
@@ -115,61 +115,101 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     protected $_retrieveOn = true;
 
-    public function __construct()
-    {
-        
-    }
-
     /**
-     * return object data as serialized string representation
+     * allow to process [section] as array key
      *
-     * @return string
+     * @var bool
      */
-    public function __toString()
-    {
-        return $this->serialize();
-    }
+    protected $_processIniSection;
 
     /**
-     * return first element from collection
-     * 
-     * @return mixed
+     * default constructor options
+     *
+     * @var array
      */
-    public function first()
-    {
-        $data = reset($this->_COLLECTION);
+    protected $_options = [
+        'data'                  => null,
+        'type'                  => null,
+        'validation'            => [],
+        'preparation'           => [],
+        'ini_section'           => false,
+    ];
 
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection($data);
+    /**
+     * inform append* methods that data was set in object creation
+     *
+     * @var bool
+     */
+    protected $_objectCreation = true;
+
+    /**
+     * create collection object
+     * 
+     * @param array $options
+     */
+    public function __construct(array $options = [])
+    {
+        $this->_options             = array_merge($this->_options, $options);
+        $data                       = $this->_options['data'];
+        $this->_processIniSection   = $this->_options['ini_section'];
+
+        $this->putValidationRule($this->_options['validation'])
+            ->putPreparationCallback($this->_options['preparation'])
+            ->initializeObject($data);
+
+        switch (true) {
+            case is_array($data):
+                $this->appendArray($data);
+                break;
+
+            default:
+                break;
         }
 
-        return $data;
+        $this->afterInitializeObject();
+        $this->_objectCreation = false;
     }
 
     /**
-     * return last element from collection
+     * append array as collection elements
      * 
-     * @return mixed
+     * @param array $arrayData
+     * @return $this
      */
-    public function last()
+    public function appendArray(array $arrayData)
     {
-        $data = end($this->_COLLECTION);
-
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection($data);
+        foreach ($arrayData as $data) {
+            $this->addElement($data);
         }
 
-        return $data;
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
     }
 
     /**
-     * return number of all elements in collection
-     * 
-     * @return int|void
+     * set regular expression collection row, or column
+     *
+     * @param string $ruleKey
+     * @param string $ruleValue
+     * @return $this
      */
-    public function count()
+    public function putValidationRule($ruleKey, $ruleValue = null)
     {
-        return count($this->_COLLECTION);
+        return $this;
+    }
+
+    /**
+     * set regular expression for collection row
+     *
+     * @param string $ruleKey
+     * @param callable $ruleValue
+     * @return $this
+     */
+    public function putPreparationCallback($ruleKey, callable $ruleValue = null)
+    {
+        return $this;
     }
 
     public function setFilter()
@@ -185,50 +225,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
     public function resetFilters()
     {
         
-    }
-
-    /**
-     * set default size for collection elements to return
-     * 
-     * @param int $size
-     * @return $this
-     */
-    public function setPageSize($size)
-    {
-        $this->_pageSize = $size;
-        return $this;
-    }
-
-    /**
-     * return size for collection elements to return
-     * 
-     * @return int
-     */
-    public function getPageSize()
-    {
-        return $this->_pageSize;
-    }
-
-    /**
-     * return current page
-     * 
-     * @return int
-     */
-    public function getCurrentPage()
-    {
-        return $this->_currentPage;
-    }
-
-    /**
-     * allow to set current page
-     * 
-     * @param int $page
-     * @return $this
-     */
-    public function setCurrentPage($page)
-    {
-        $this->_currentPage = $page;
-        return $this;
     }
 
     public function setOrder()
@@ -366,16 +362,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         return $this;
     }
 
-    /**
-     * return count of allowed pages
-     * 
-     * @return float
-     */
-    public function getPagesCount()
-    {
-        return ceil($this->count() / $this->getPageSize());
-    }
-
     public function getFirstPage()
     {
         
@@ -410,9 +396,66 @@ class Collection implements Serializable, ArrayAccess, Iterator
         
     }
 
-    public function addElement($value, $index = null)
+    /**
+     * add one row element to collection
+     * 
+     * @param mixed $data
+     * @param null|string $type
+     * @return $this
+     */
+    public function addElement($data, $type = null)
     {
-        
+        $bool = $this->_validateData($data);
+        if (!$bool) {
+            return $this;
+        }
+
+        if ($this->_preparationOn) {
+            $data = $this->_dataPreparation(
+                $data,
+                $this->_dataPreparationCallbacks
+            );
+        }
+
+        $this->_COLLECTION[] = $data;
+
+        return $this;
+    }
+
+    /**
+     * validate data on input
+     * 
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _validateData($data)
+    {
+        return true;
+    }
+
+    /**
+     * allow to prepare input or output data
+     * 
+     * @param mixed $data
+     * @param array $callbacks
+     * @return mixed
+     */
+    protected function _dataPreparation($data, array $callbacks)
+    {
+        return $data;
+    }
+
+    //finished methods
+
+    /**
+     * clear some data after creating new object with data
+     *
+     * @return $this
+     */
+    protected function _afterAppendDataToNewObject()
+    {
+        $this->_dataChanged = false;
+        return $this;
     }
 
     /**
@@ -622,5 +665,111 @@ class Collection implements Serializable, ArrayAccess, Iterator
     {
         $this->_retrieveOn = true;
         return $this;
+    }
+
+    /**
+     * return first element from collection
+     *
+     * @return mixed
+     */
+    public function first()
+    {
+        $data = reset($this->_COLLECTION);
+
+        if ($this->_retrieveOn) {
+            return $this->_prepareCollection($data);
+        }
+
+        return $data;
+    }
+
+    /**
+     * return last element from collection
+     *
+     * @return mixed
+     */
+    public function last()
+    {
+        $data = end($this->_COLLECTION);
+
+        if ($this->_retrieveOn) {
+            return $this->_prepareCollection($data);
+        }
+
+        return $data;
+    }
+
+    /**
+     * return number of all elements in collection
+     *
+     * @return int|void
+     */
+    public function count()
+    {
+        return count($this->_COLLECTION);
+    }
+
+    /**
+     * return object data as serialized string representation
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->serialize();
+    }
+
+    /**
+     * set default size for collection elements to return
+     *
+     * @param int $size
+     * @return $this
+     */
+    public function setPageSize($size)
+    {
+        $this->_pageSize = $size;
+        return $this;
+    }
+
+    /**
+     * return size for collection elements to return
+     *
+     * @return int
+     */
+    public function getPageSize()
+    {
+        return $this->_pageSize;
+    }
+
+    /**
+     * return current page
+     *
+     * @return int
+     */
+    public function getCurrentPage()
+    {
+        return $this->_currentPage;
+    }
+
+    /**
+     * allow to set current page
+     *
+     * @param int $page
+     * @return $this
+     */
+    public function setCurrentPage($page)
+    {
+        $this->_currentPage = $page;
+        return $this;
+    }
+
+    /**
+     * return count of allowed pages
+     *
+     * @return float
+     */
+    public function getPagesCount()
+    {
+        return ceil($this->count() / $this->getPageSize());
     }
 }
