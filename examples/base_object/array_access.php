@@ -4,7 +4,7 @@
 $ob['first_key']    = 'first data key';
 $ob['second_key']   = 'second data key';
 $ob['third_key']    = 'third data key';
-var_dump($ob->getData());
+var_dump($ob->get());
 var_dump($ob['existing']);
 var_dump($ob['third_key']);
 </pre>
@@ -15,7 +15,7 @@ $ob['first_key']    = 'first data key';
 $ob['second_key']   = 'second data key';
 $ob['third_key']    = 'third data key';
 ?>
-<pre><?php var_dump($ob->getData());?></pre>
+<pre><?php var_dump($ob->get());?></pre>
 <pre><?php var_dump($ob['existing']);?></pre>
 <pre><?php var_dump($ob['third_key']);?></pre>
 

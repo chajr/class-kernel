@@ -8,13 +8,13 @@ var_dump($objectJson->compareData($objectArray->getFirstData(), 'first_data'));<
 
 <h5>Compare 2 Objects data, list of keys</h5>
 <code>
-<pre>var_dump($objectJson->compareData($objectJson->getData()))
-var_dump($objectJson->compareData($objectArray->getData()))
-var_dump($objectJson->compareData($objectSerialized->getData()))</pre>
+<pre>var_dump($objectJson->compareData($objectJson->get()))
+var_dump($objectJson->compareData($objectArray->get()))
+var_dump($objectJson->compareData($objectSerialized->get()))</pre>
 </code>
-<pre><?php var_dump($objectJson->compareData($objectJson->getData()));?></pre>
-<pre><?php var_dump($objectJson->compareData($objectArray->getData()));?></pre>
-<pre><?php var_dump($objectJson->compareData($objectSerialized->getData()));?></pre>
+<pre><?php var_dump($objectJson->compareData($objectJson->get()));?></pre>
+<pre><?php var_dump($objectJson->compareData($objectArray->get()));?></pre>
+<pre><?php var_dump($objectJson->compareData($objectSerialized->get()));?></pre>
 
 <h5>Compare 2 Objects</h5>
 <code>
@@ -32,7 +32,7 @@ var_dump($objectJson->compareData($objectArray->getFirstData(), 'first_data', '<
 <pre><?php var_dump($objectJson->compareData($objectArray->getThirdData(), 'third_data', '!=='));?></pre>
 <pre><?php var_dump($objectJson->compareData($objectArray->getFirstData(), 'first_data', '<'));?></pre>
 In second example compare char with null, be caurfle with usage of data comparation.
-<pre><?php var_dump($objectArray->getFirstData(), $objectJson->getData('first_data')); ?></pre>
+<pre><?php var_dump($objectArray->getFirstData(), $objectJson->get('first_data')); ?></pre>
 
 <h5>Compare with magic methods</h5>
 <code>

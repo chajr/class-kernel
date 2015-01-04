@@ -10,8 +10,8 @@ var_dump($object->hasNonExistData());</pre>
 <code>
 <pre>var_dump($object->getFirstData());
 var_dump($object->getNonExistData());
-var_dump($object->getData('non_exist_data'));</pre>
+var_dump($object->get('non_exist_data'));</pre>
 </code>
 <pre><?php var_dump($object->getFirstData());?></pre>
 <pre><?php var_dump($object->getNonExistData());?></pre>
-<pre><?php var_dump($object->getData('non_exist_data'));?></pre>
+<pre><?php var_dump($object->get('non_exist_data'));?></pre>

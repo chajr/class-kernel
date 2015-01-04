@@ -24,6 +24,13 @@ use ReflectionFunction;
 trait BlueObject
 {
     /**
+     * text value for skipped object
+     * 
+     * @var string
+     */
+    protected $_skippedObject = ': {;skipped_object;}';
+
+    /**
      * contains name of undefined data
      * 
      * @var string
@@ -289,7 +296,7 @@ trait BlueObject
     public function __isset($key)
     {
         $key = $this->_convertKeyNames($key);
-        return $this->hasData($key);
+        return $this->has($key);
     }
 
     /**
@@ -300,7 +307,7 @@ trait BlueObject
     public function __unset($key)
     {
         $key = $this->_convertKeyNames($key);
-        $this->unsetData($key);
+        $this->destroy($key);
     }
 
     /**
@@ -318,53 +325,37 @@ trait BlueObject
         switch (true) {
             case substr($method, 0, 3) === 'get':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                if (array_key_exists(0, $arguments)) {
-                    return $this->toArray($key, $arguments[0]);
-                }
-                return $this->toArray($key);
+                return $this->get($key);
 
             case substr($method, 0, 3) === 'set':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                if (array_key_exists(0, $arguments)) {
-                    return $this->appendData($key, $arguments[0]);
-                }
-                return $this->appendArray($key);
+                return $this->set($key, $arguments[0]);
 
             case substr($method, 0, 3) === 'has':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                return $this->hasData($key);
+                return $this->has($key);
 
             case substr($method, 0, 3) === 'not':
                 $key = $this->_convertKeyNames(substr($method, 3));
-                $val = $this->toArray($key);
+                $val = $this->get($key);
+                return $this->_compareData($arguments[0], $key, $val, '!==');
 
-                if (is_callable($arguments[0])) {
-                    return call_user_func_array($arguments[0], [$key, $val, $this]);
-                }
-
-                return $this->_comparator($val, $arguments[0], '!==');
-
-            case substr($method, 0, 5) === 'unset':
+            case substr($method, 0, 5) === 'unset' || substr($method, 0, 5) === 'destroy':
                 $key = $this->_convertKeyNames(substr($method, 5));
-                return $this->unsetData($key);
+                return $this->destroy($key);
 
             case substr($method, 0, 5) === 'clear':
                 $key = $this->_convertKeyNames(substr($method, 5));
-                return $this->clearData($key);
+                return $this->clear($key);
 
             case substr($method, 0, 7) === 'restore':
                 $key = $this->_convertKeyNames(substr($method, 7));
-                return $this->restoreData($key);
+                return $this->restore($key);
 
             case substr($method, 0, 2) === 'is':
                 $key = $this->_convertKeyNames(substr($method, 2));
-                $val = $this->toArray($key);
-
-                if (is_callable($arguments[0])) {
-                    return call_user_func_array($arguments[0], [$key, $val, $this]);
-                }
-
-                return $this->_comparator($val, $arguments[0], '===');
+                $val = $this->get($key);
+                return $this->_compareData($arguments[0], $key, $val, '===');
 
             default:
                 $this->_errorsList['wrong_method'] = get_class($this) . ' - ' . $method;
@@ -374,13 +365,21 @@ trait BlueObject
     }
 
     /**
-     * return DATA content if try to access object by var_export() function
-     *
-     * @return mixed
+     * compare given data with possibility to use callable functions to check data
+     * 
+     * @param mixed $dataToCheck
+     * @param string $key
+     * @param mixed $originalData
+     * @param string $comparator
+     * @return bool
      */
-    public function __set_state()
+    protected function _compareData($dataToCheck, $key, $originalData, $comparator)
     {
-        return $this->toArray();
+        if (is_callable($dataToCheck)) {
+            return call_user_func_array($dataToCheck, [$key, $originalData, $this]);
+        }
+
+        return $this->_comparator($originalData, $dataToCheck, $comparator);
     }
 
     /**
@@ -478,6 +477,18 @@ trait BlueObject
      */
     public function getData($key = null)
     {
+        return $this->toArray($key);
+    }
+
+    /**
+     * return data for given key if exist in object
+     * or null if key was not found
+     * 
+     * @param string|null $key
+     * @return mixed
+     */
+    public function get($key = null)
+    {
         $this->_prepareData($key);
         $data = null;
 
@@ -499,10 +510,23 @@ trait BlueObject
      *
      * @param string|array $key
      * @param mixed $data
-     * @return Object
+     * @return $this
      * @deprecated
      */
     public function setData($key, $data = null)
+    {
+        return $this->set($key, $data);
+    }
+
+    /**
+     * set some data in object
+     * can give pair key=>value or array of keys
+     * 
+     * @param string|array $key
+     * @param mixed $data
+     * @return $this
+     */
+    public function set($key, $data = null)
     {
         if (is_array($key)) {
             $this->appendArray($key);
@@ -544,13 +568,22 @@ trait BlueObject
      *
      * @param null|string $key
      * @return bool
+     * @deprecated
      */
     public function hasData($key = null)
     {
-        if (
-            (is_null($key) && !empty($this->_DATA))
-            || array_key_exists($key, $this->_DATA)
-        ) {
+        return $this->has($key);
+    }
+
+    /**
+     * check if data with given key exist in object, or object has some data
+     * 
+     * @param string $key
+     * @return bool
+     */
+    public function has($key)
+    {
+        if (array_key_exists($key, $this->_DATA)) {
             return true;
         }
 
@@ -663,8 +696,21 @@ trait BlueObject
      *
      * @param string|null $key
      * @return $this
+     * @deprecated
      */
     public function unsetData($key = null)
+    {
+        return $this->destroy($key);
+    }
+
+    /**
+     * destroy key entry in object data, or whole keys
+     * automatically set data to original array
+     * 
+     * @param string|null $key
+     * @return $this
+     */
+    public function destroy($key = null)
     {
         if (is_null($key)) {
             $this->_dataChanged  = true;
@@ -692,8 +738,20 @@ trait BlueObject
      *
      * @param string $key
      * @return $this
+     * @deprecated
      */
     public function clearData($key)
+    {
+        return $this->clear($key);
+    }
+
+    /**
+     * set object key data to null
+     * 
+     * @param string $key
+     * @return $this
+     */
+    public function clear($key)
     {
         $this->_putData($key, null);
         return $this;
@@ -705,8 +763,21 @@ trait BlueObject
      *
      * @param string|null $key
      * @return $this
+     * @deprecated
      */
     public function restoreData($key = null)
+    {
+        return $this->restore($key);
+    }
+
+    /**
+     * replace changed data by original data
+     * set data changed to false only if restore whole data
+     *
+     * @param string|null $key
+     * @return $this
+     */
+    public function restore($key = null)
     {
         if (is_null($key)) {
             $mergedData         = array_merge($this->_DATA, $this->_originalDATA);
@@ -837,15 +908,14 @@ trait BlueObject
     }
 
     /**
-     * alias to getData
-     * return all data form DATA attribute
+     * return data for given key if exist in object, or all object data
      *
      * @param string|null $key
      * @return mixed
      */
     public function toArray($key = null)
     {
-        return $this->getData($key);
+        return $this->get($key);
     }
 
     /**
@@ -1450,7 +1520,7 @@ trait BlueObject
             return $this;
         }
 
-        $hasData = $this->hasData($key);
+        $hasData = $this->has($key);
         if ($this->_preparationOn) {
             $data = $this->_dataPreparation(
                 $key,
@@ -1734,7 +1804,7 @@ trait BlueObject
     protected function _skipObject($key, $value)
     {
         if (is_object($value)) {
-            return '{;skipped_object;}';
+            return $key . $this->_skippedObject;
         }
 
         return $value;
@@ -1758,7 +1828,7 @@ trait BlueObject
      * @param string|null $key
      * @return $this
      */
-    public function destroyValidationRule($key = null)
+    public function removeValidationRule($key = null)
     {
         return $this->_genericDestroy($key, 'validation');
     }
@@ -1947,7 +2017,7 @@ trait BlueObject
      * @param string|null $key
      * @return $this
      */
-    public function destroyPreparationCallback($key = null)
+    public function removePreparationCallback($key = null)
     {
         return $this->_genericDestroy($key, 'preparation_callback');
     }
@@ -1981,7 +2051,7 @@ trait BlueObject
      * @param string|null $key
      * @return $this
      */
-    public function destroyReturnCallback($key = null)
+    public function removeReturnCallback($key = null)
     {
         return $this->_genericReturn($key, 'return_callback');
     }
@@ -2005,7 +2075,7 @@ trait BlueObject
      */
     public function offsetExists($offset)
     {
-        return $this->hasData($offset);
+        return $this->has($offset);
     }
 
     /**
@@ -2044,7 +2114,7 @@ trait BlueObject
      */
     public function offsetUnset($offset)
     {
-        $this->unsetData($offset);
+        $this->destroy($offset);
         return $this;
     }
 

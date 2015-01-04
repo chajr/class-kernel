@@ -35,7 +35,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             return false;
         });
 
-        $object->setData([
+        $object->set([
             'data_first'    => 'first data',
             'data_second'   => 'second data',
             'data_third'    => 'third data',
@@ -208,7 +208,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object['data_fourth'] = 4;
 
         $this->assertTrue($object->hasDataThird());
-        $this->assertTrue($object->hasData('data_fourth'));
+        $this->assertTrue($object->has('data_fourth'));
         $this->assertTrue($object->dataChanged());
 
         $this->assertFalse($object->checkErrors());
@@ -229,14 +229,14 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object = $this->_simpleObject($first, $second);
 
         $this->assertFalse($object->hasDataThird());
-        $this->assertFalse($object->hasData('data_fourth'));
+        $this->assertFalse($object->has('data_fourth'));
         $this->assertFalse($object->dataChanged());
 
         $object->appendData('data_third', 3);
         $object->appendData('data_fourth', 4);
 
         $this->assertTrue($object->hasDataThird());
-        $this->assertTrue($object->hasData('data_fourth'));
+        $this->assertTrue($object->has('data_fourth'));
         $this->assertTrue($object->dataChanged());
 
         $this->assertFalse($object->checkErrors());
@@ -334,7 +334,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $object->setDataSecond('moo');
         $this->assertTrue($object->dataChanged());
 
-        $object->restoreData();
+        $object->restore();
         $this->assertEquals(
             $this->_getSimpleData($first, $second),
             $object->toArray()
@@ -455,7 +455,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($first . '_modified', $object->getDataFirst());
         $this->assertEquals('second', $object->toArray('data_second'));
 
-        $object->setData([
+        $object->set([
             'data_third'    => 'bar',
             'data_fourth'   => 'moo',
         ]);
@@ -890,7 +890,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             }
         ]);
         $object->appendArray($this->_getSimpleData($first, $second));
-        $data = $this->_exampleSerializedData($first, '{;skipped_object;}');
+        $data = $this->_exampleSerializedData($first, 'data_second: {;skipped_object;}');
 
         $this->assertEquals($data, $object->serialize(true));
     }
