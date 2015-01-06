@@ -71,33 +71,38 @@ class Register
      *
      * @param string $name
      * @param array $args
-     * @param bool $reflection
+     * @param bool $getReflection
      * @return mixed
      */
-    public static function getObject($name, $args = [], $reflection = false)
+    public static function getObject($name, array $args = [], $getReflection = false)
     {
         self::tracer('getObject', debug_backtrace(), '006c94');
         self::callEvent('register_get_object_before', [&$name, &$args]);
 
         $object = false;
 
+        if (!class_exists($name)) {
+            self::$_error[] = $name . ' don\'t exist';
+            self::callEvent('register_get_object_error', [$name, $args, self::$_error]);
+            return false;
+        }
+
         try {
-            if (empty($args)) {
-                $object = new $name;
-            } else {
-                $object = new $name($args);
+            $reflection = new ReflectionClass($name);
+
+            if ($getReflection) {
+                return $reflection;
             }
+
+            $object = $reflection->newInstanceArgs($args);
         } catch (Exception $e) {
             self::$_error[] = $e;
             self::callEvent('register_get_object_exception', [$name, $args, $e]);
+            return false;
         }
 
         if ($object) {
             self::_setClassCounter(self::name2code($name));
-        }
-
-        if ($reflection) {
-            $object = new ReflectionClass($object);
         }
 
         self::callEvent('register_get_object_after', [$name, $args, $object]);
@@ -139,7 +144,7 @@ class Register
      * @param string $class
      * @param array $args
      * @param null|string $instanceName
-     * @return object;
+     * @return mixed;
      */
     public static function getSingleton($class, $args = [], $instanceName = null)
     {
@@ -154,8 +159,8 @@ class Register
 
         $instanceCode = self::name2code($name);
 
-        if (self::$_singletons->hasData($instanceCode)) {
-            $instance = self::$_singletons->getData($instanceCode);
+        if (self::$_singletons->has($instanceCode)) {
+            $instance = self::$_singletons->get($instanceCode);
         } else {
             $instance = self::_setObject($class, $instanceCode, $args);
         }
@@ -186,7 +191,7 @@ class Register
     {
         $instanceCode = self::name2code($class);
 
-        self::$_singletons->unsetData($instanceCode);
+        self::$_singletons->destroy($instanceCode);
         self::$_classCounter[$class] = "destroyed [$class]";
     }
 
@@ -218,7 +223,7 @@ class Register
         $object = self::getObject($class, $args);
 
         if ($object) {
-            self::$_singletons->setData($name, $object);
+            self::$_singletons->set($name, $object);
         }
 
         self::callEvent('register_set_object_after', [$class, $name, $args, $object]);
@@ -234,12 +239,13 @@ class Register
      */
     public static function getRegisteredObjects($singletonKey = null)
     {
-        if ($singletonKey && self::$_singletons->hasData($singletonKey)) {
-            return new ReflectionClass(self::$_singletons->getData($singletonKey));
+        self::_singletonContainer();
+        if ($singletonKey && self::$_singletons->has($singletonKey)) {
+            return new ReflectionClass(self::$_singletons->get($singletonKey));
         }
 
         $list = [];
-        foreach (self::$_singletons->getData() as $name => $class) {
+        foreach (self::$_singletons->get() as $name => $class) {
             $list[$name] = new ReflectionClass($class);
         }
 
