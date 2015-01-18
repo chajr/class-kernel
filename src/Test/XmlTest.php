@@ -57,4 +57,24 @@ class XmlTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('b', $list);
         $this->assertArrayHasKey('c', $list);
     }
+
+    /**
+     * test loading xml data from file
+     */
+    public function testFileLoading()
+    {
+        $testFile = 'examples/xml/source.xml';
+        $this->assertFileExists($testFile, 'test file don\'t exists');
+
+        $xml = new Xml;
+        $xml->loadXmlFile($testFile);
+
+        $this->assertFalse($xml->hasErrors());
+
+        $root = $xml->documentElement;
+        $this->assertEquals(
+            'lorem ipsum',
+            $root->getElementsByTagName('sub')->item(0)->nodeValue
+        );
+    }
 }
