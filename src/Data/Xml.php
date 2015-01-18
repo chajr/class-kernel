@@ -253,7 +253,8 @@ class Xml extends DOMDocument
     }
 
     /**
-     * search node for elements that contains element with give attribute
+     * search for all nodes with given attribute
+     * return list of nodes with attribute value as key
      *
      * @param DOMNodeList $node
      * @param string $value attribute value to search
@@ -279,7 +280,7 @@ class Xml extends DOMDocument
 
                 $id = $child->getAttribute($value);
                 if ($id) {
-                    $list[$id] = $id;
+                    $list[$id] = $child;
                 }
             }
         }

@@ -1,6 +1,6 @@
 <?php
 /**
- * test BlueObject using Object class
+ * test Register class
  *
  * @package     ClassKernel
  * @subpackage  Test
