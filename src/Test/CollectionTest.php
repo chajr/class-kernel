@@ -51,6 +51,36 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         
     }
 
+    public function testRemovingElementFromCollection()
+    {
+        
+    }
+
+    /**
+     * test some basic access to single collection elements
+     * 
+     * @requires exampleCollection
+     */
+    public function testBasicAccessToCollectionElements()
+    {
+        $data = $this->_exampleCollection();
+        $collection = new Collection([
+            'data'  => $data
+        ]);
+
+        $this->assertEquals('lorem ipsum', $collection->first());
+        $this->assertEquals('lorem ipsum', $collection[0]);
+        $this->assertEquals(1, $collection->last()['data_first']);
+        $this->assertEquals($data[1]['data_first'], $collection->getElement(1)['data_first']);
+        $this->assertEquals(9, $collection->count());
+        $this->assertTrue($collection->hasElement(5));
+    }
+
+    public function testReturnCollectionWithDataPreparation()
+    {
+        
+    }
+
     public function testPageAccessForCollection()
     {
         
