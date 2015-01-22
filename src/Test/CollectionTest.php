@@ -36,29 +36,26 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($data[1]['data_first'], $collection->getElement(1)['data_first']);
     }
 
-    public function testCreateCollectionWithValidation()
-    {
-        
-    }
-
-    public function testCreateCollectionWithDataPreparation()
-    {
-        
-    }
-
+    /**
+     * check usage collection as array (access data and loop processing)
+     *
+     * @requires exampleCollection
+     */
     public function testArrayAccessForCollection()
     {
-        
-    }
+        $data = $this->_exampleCollection();
+        $collection = new Collection([
+            'data'  => $data
+        ]);
 
-    public function testRemovingElementFromCollection()
-    {
-        
+        foreach ($collection as $index => $element) {
+            $this->assertEquals($data[$index], $element);
+        }
     }
 
     /**
      * test some basic access to single collection elements
-     * 
+     *
      * @requires exampleCollection
      */
     public function testBasicAccessToCollectionElements()
@@ -74,6 +71,21 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($data[1]['data_first'], $collection->getElement(1)['data_first']);
         $this->assertEquals(9, $collection->count());
         $this->assertTrue($collection->hasElement(5));
+    }
+
+    public function testCreateCollectionWithValidation()
+    {
+        
+    }
+
+    public function testCreateCollectionWithDataPreparation()
+    {
+        
+    }
+
+    public function testRemovingElementFromCollection()
+    {
+        
     }
 
     public function testReturnCollectionWithDataPreparation()
