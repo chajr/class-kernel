@@ -162,6 +162,8 @@ class Collection implements Serializable, ArrayAccess, Iterator
                 $this->appendArray($data);
                 break;
 
+            //data provider object to handle lazy data loading for collection
+
             default:
                 break;
         }
@@ -362,16 +364,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         return $this;
     }
 
-    public function getFirstPage()
-    {
-        
-    }
-
-    public function getLastPage()
-    {
-        
-    }
-
     /**
      * prepare collection before return
      * 
@@ -487,6 +479,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function removeElement($element)
     {
+        //recalculate indexes
         return $this->delete($element);
     }
 
@@ -720,7 +713,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * set default size for collection elements to return
+     * set default size for collection elements on page to return
      *
      * @param int $size
      * @return $this
@@ -732,7 +725,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * return size for collection elements to return
+     * return size for collection elements on page to return
      *
      * @return int
      */
@@ -764,12 +757,47 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * return count of allowed pages
+     * return number of all pages
      *
      * @return float
      */
-    public function getPagesCount()
+    public function countPages()
     {
         return ceil($this->count() / $this->getPageSize());
+    }
+
+    /**
+     * get all elements from first page
+     *
+     * @return array|mixed
+     */
+    public function getFirstPage()
+    {
+        $pageSize   = $this->getPageSize();
+        $data       = array_slice($this->_COLLECTION, 0, $pageSize);
+
+        if ($this->_retrieveOn) {
+            return $this->_prepareCollection($data);
+        }
+
+        return $data;
+    }
+
+    /**
+     * get all elements from last page
+     * 
+     * @return array|mixed
+     */
+    public function getLastPage()
+    {
+        $pageSize   = $this->getPageSize();
+        $start      = ($this->count() +1) - $pageSize;
+        $data       = array_slice($this->_COLLECTION, $start, $pageSize);
+
+        if ($this->_retrieveOn) {
+            return $this->_prepareCollection($data);
+        }
+
+        return $data;
     }
 }
