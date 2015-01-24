@@ -123,6 +123,13 @@ class Collection implements Serializable, ArrayAccess, Iterator
     protected $_processIniSection;
 
     /**
+     * if true loop on collection will iterate on pages, otherwise on elements
+     * 
+     * @var bool
+     */
+    protected $_loopByPages = false;
+
+    /**
      * default constructor options
      *
      * @var array
@@ -244,19 +251,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         
     }
 
-    /**
-     * return all elements from collection
-     * 
-     * @return array
-     */
-    public function getFullCollection()
-    {
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection();
-        }
-        return $this->_COLLECTION;
-    }
-
     public function setCollection()
     {
         
@@ -274,13 +268,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function serialize()
     {
-        if ($this->_retrieveOn) {
-            $collection = $this->_prepareCollection();
-        } else {
-            $collection = $this->_COLLECTION;
-        }
-
-        return serialize($collection);
+        return serialize($this->_prepareCollection());
     }
 
     public function unserialize($string)
@@ -304,77 +292,29 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * check that given page number can be set up
-     * 
-     * @param int $pageSize
-     * @return bool
-     */
-    protected function _isPageSizeAllowed($pageSize)
-    {
-        $max = $this->count() >= ($this->getPageSize() * $pageSize);
-        $min = $pageSize > 1;
-
-        if ($max && $min) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function getPage()
-    {
-        
-    }
-
-    public function getNextPage()
-    {
-        
-    }
-
-    public function getPreviousPage()
-    {
-        
-    }
-
-    /**
-     * set next page number
-     * 
-     * @return $this
-     */
-    public function nextPage()
-    {
-        if ($this->_isPageSizeAllowed($this->getCurrentPage() +1)) {
-            $this->_currentPage++;
-        }
-
-        return $this;
-    }
-
-    /**
-     * set previous page number
-     * 
-     * @return $this
-     */
-    public function previousPage()
-    {
-        if ($this->_isPageSizeAllowed($this->getCurrentPage() -1)) {
-            $this->_currentPage--;
-        }
-
-        return $this;
-    }
-
-    /**
      * prepare collection before return
      * 
-     * @param mixed|null $data
+     * @param array|null $data
+     * @param bool $isSingleElement
      * @return mixed
      */
-    protected function _prepareCollection($data = null)
+    protected function _prepareCollection($data = null, $isSingleElement = false)
     {
-        if ($data === null) {
-            return $this->_COLLECTION;
+        if (is_null($data)) {
+            $data = $this->_COLLECTION;
         }
+
+        if (!$this->_retrieveOn) {
+            return $data;
+        }
+
+        //work on collection
+        if (!$isSingleElement) {
+            //work on elements
+        } else {
+            //work on single element
+        }
+
         return $data;
     }
 
@@ -440,6 +380,62 @@ class Collection implements Serializable, ArrayAccess, Iterator
     //finished methods
 
     /**
+     * return all elements from collection
+     *
+     * @return array
+     */
+    public function getFullCollection()
+    {
+        return $this->_prepareCollection();
+    }
+
+    /**
+     * check that given page number can be set up
+     *
+     * @param int $pageSize
+     * @return bool
+     */
+    protected function _isPageAllowed($pageSize)
+    {
+        $max = $this->count() >= ($this->getPageSize() * $pageSize);
+        $min = $pageSize >= 1;
+
+        if ($max && $min) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * set next page number
+     *
+     * @return $this
+     */
+    public function nextPage()
+    {
+        if ($this->_isPageAllowed($this->getCurrentPage() +1)) {
+            $this->_currentPage++;
+        }
+
+        return $this;
+    }
+
+    /**
+     * set previous page number
+     *
+     * @return $this
+     */
+    public function previousPage()
+    {
+        if ($this->_isPageAllowed($this->getCurrentPage() -1)) {
+            $this->_currentPage--;
+        }
+
+        return $this;
+    }
+
+    /**
      * clear some data after creating new object with data
      *
      * @return $this
@@ -460,12 +456,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     {
         if ($this->hasElement($index)) {
             $data = $this->_COLLECTION[$index];
-
-            if ($this->_preparationOn) {
-                return $this->_prepareCollection($data);
-            }
-
-            return $data;
+            return $this->_prepareCollection($data, true);
         }
 
         return null;
@@ -668,12 +659,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     public function first()
     {
         $data = reset($this->_COLLECTION);
-
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection($data);
-        }
-
-        return $data;
+        return $this->_prepareCollection($data, true);
     }
 
     /**
@@ -684,12 +670,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     public function last()
     {
         $data = end($this->_COLLECTION);
-
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection($data);
-        }
-
-        return $data;
+        return $this->_prepareCollection($data, true);
     }
 
     /**
@@ -735,7 +716,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * return current page
+     * return current page number
      *
      * @return int
      */
@@ -773,14 +754,8 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function getFirstPage()
     {
-        $pageSize   = $this->getPageSize();
-        $data       = array_slice($this->_COLLECTION, 0, $pageSize);
-
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection($data);
-        }
-
-        return $data;
+        $data = $this->_getPage(1);
+        return $this->_prepareCollection($data);
     }
 
     /**
@@ -790,14 +765,97 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function getLastPage()
     {
-        $pageSize   = $this->getPageSize();
-        $start      = ($this->count() +1) - $pageSize;
-        $data       = array_slice($this->_COLLECTION, $start, $pageSize);
+        $data = $this->_getPage($this->countPages());
+        return $this->_prepareCollection($data);
+    }
 
-        if ($this->_retrieveOn) {
-            return $this->_prepareCollection($data);
+    /**
+     * return elements for page with given index
+     * 
+     * @param int $index
+     * @return array
+     */
+    protected function _getPage($index)
+    {
+        $pageSize   = $this->getPageSize();
+        $start      = ($index * $pageSize) -$pageSize;
+        return array_slice($this->_COLLECTION, $start, $pageSize);
+    }
+
+    /**
+     * return current page or page with given index
+     * return null if page don't exists
+     * 
+     * @param null|int $index
+     * @return mixed|null
+     */
+    public function getPage($index = null)
+    {
+        if (!$index) {
+            $index = $this->getCurrentPage();
         }
 
-        return $data;
+        if (!$this->_isPageAllowed($index)) {
+            return null;
+        }
+
+        $data = $this->_getPage($index);
+        return $this->_prepareCollection($data);
+    }
+
+    /**
+     * get next page of collection
+     * don't change the current page marker
+     * 
+     * @return array|null
+     */
+    public function getNextPage()
+    {
+        $page = $this->getCurrentPage() +1;
+
+        if (!$this->_isPageAllowed($page)) {
+            return null;
+        }
+
+        return $this->getPage($page);
+    }
+
+    /**
+     * get previous page of collection
+     * don't change the current page marker
+     *
+     * @return array|null
+     */
+    public function getPreviousPage()
+    {
+        $page = $this->getCurrentPage() -1;
+
+        if (!$this->_isPageAllowed($page)) {
+            return null;
+        }
+
+        return $this->getPage($page);
+    }
+
+    /**
+     * set loop on collection to iterate on pages, if false on elements
+     * 
+     * @param bool $bool
+     * @return $this
+     */
+    public function loopPages($bool = true)
+    {
+        $this->_loopByPages = (bool)$bool;
+        return $this;
+    }
+
+    /**
+     * return information witch loop is used for collection
+     * 
+     * @return bool
+     */
+    public function isLoopByPagesEnabled()
+    {
+        return $this->_loopByPages;
     }
 }
