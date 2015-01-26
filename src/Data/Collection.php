@@ -198,18 +198,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * set regular expression collection row, or column
-     *
-     * @param string $ruleKey
-     * @param string $ruleValue
-     * @return $this
-     */
-    public function putValidationRule($ruleKey, $ruleValue = null)
-    {
-        return $this;
-    }
-
-    /**
      * set regular expression for collection row
      *
      * @param string $ruleKey
@@ -355,17 +343,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * validate data on input
-     * 
-     * @param mixed $data
-     * @return bool
-     */
-    protected function _validateData($data)
-    {
-        return true;
-    }
-
-    /**
      * allow to prepare input or output data
      * 
      * @param mixed $data
@@ -378,6 +355,123 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     //finished methods
+
+    /**
+     * return information that collection has some errors
+     * 
+     * @return bool
+     */
+    public function checkErrors()
+    {
+        return $this->_hasErrors;
+    }
+
+    /**
+     * return all object errors
+     * 
+     * @return array
+     */
+    public function returnObjectError()
+    {
+        return $this->_errorsList;
+    }
+
+    /**
+     * clear all errors and set hasErrors to false
+     * 
+     * @return $this
+     */
+    public function removeObjectError()
+    {
+        $this->_hasErrors   = false;
+        $this->_errorsList  = [];
+        return $this;
+    }
+
+    /**
+     * validate data on input
+     *
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _validateData($data)
+    {
+        $validateFlag = true;
+        foreach ($this->_validationRules as $rule) {
+            $bool = $this->_callUserFunction($rule, null, $data, null);
+
+            if (!$bool) {
+                $validateFlag           = false;
+                $this->_hasErrors       = true;
+                $this->_errorsList[]    = [
+                    'message'   => 'validation_mismatch',
+                    'index'     => null,
+                    'data'      => $data,
+                    'rule'      => $rule,
+                ];
+            }
+        }
+
+        return $validateFlag;
+    }
+
+    /**
+     * run given function, method or closure on given data
+     *
+     * @param array|string|\Closure $function
+     * @param int|null $index
+     * @param mixed $value
+     * @param mixed $attributes
+     * @return mixed
+     */
+    protected function _callUserFunction($function, $index, $value, $attributes)
+    {
+        if (is_callable($function)) {
+            return call_user_func_array($function, [$index, $value, $this, $attributes]);
+        }
+
+        return $value;
+    }
+
+    /**
+     * set validation callable function to check each collection row
+     * give as array with rule name and function to call
+     *
+     * @param array $rules
+     * @return $this
+     */
+    public function putValidationRule(array $rules)
+    {
+        $this->_validationRules = array_merge($this->_validationRules, $rules);
+        return $this;
+    }
+
+    /**
+     * return all current rules
+     *
+     * @return array
+     */
+    public function returnValidationRules()
+    {
+        return $this->_validationRules;
+    }
+
+    /**
+     * remove given rule name or all rules
+     *
+     * @param null|string $rule
+     * @return $this
+     */
+    public function removeValidationRules($rule = null)
+    {
+        if (is_null($rule)) {
+            $this->_validationRules = [];
+        } else {
+            unset($this->_validationRules[$rule]);
+        }
+
+        return $this;
+    }
 
     /**
      * return all elements from collection
@@ -605,6 +699,16 @@ class Collection implements Serializable, ArrayAccess, Iterator
     {
         $this->_validationOn = true;
         return $this;
+    }
+
+    /**
+     * return information that validation is on
+     * 
+     * @return bool
+     */
+    public function isValidationOn()
+    {
+        return $this->_validationOn;
     }
 
     /**
