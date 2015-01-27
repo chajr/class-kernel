@@ -36,6 +36,63 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * check validation rules when add data to collection on object creation
+     *
+     * @requires exampleCollection
+     * @requires _exampleCollectionObject
+     */
+    public function testCreateCollectionWithValidation()
+    {
+        $data               = $this->_exampleCollection();
+        $validationRules    = [
+            'rule_1' => function ($index, $value) {
+            if (is_string($value)) {
+                return $value === 'lorem ipsum';
+            }
+
+                return true;
+            },
+            'rule_2' => function ($index, $value) {
+            if (is_array($value) || is_object($value)) {
+                return isset($value['data_second']);
+            }
+
+            return true;
+            }
+        ];
+
+        $collection = new Collection([
+            'data'          => $data,
+            'validation'    => $validationRules
+        ]);
+
+        $this->assertFalse($collection->checkErrors());
+        $this->assertEmpty($collection->returnObjectError());
+
+        $validationRules    = [
+            'rule_1' => function ($index, $value) {
+            if (is_string($value)) {
+                return $value === 'lorem ipsum dolor';
+            }
+
+            return true;
+            },
+        ];
+
+        $collection = new Collection([
+            'data'          => $data,
+            'validation'    => $validationRules
+        ]);
+
+        $this->assertTrue($collection->checkErrors());
+        $this->assertNull($collection->returnObjectError()[0]['index']);
+        $this->assertEquals(
+            'validation_mismatch',
+            $collection->returnObjectError()[0]['message']
+        );
+    }
+
+    /**
      * check usage collection as array (access data and loop processing)
      *
      * @param Collection $collection
@@ -113,11 +170,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     }
 
     public function testArrayAccessToCollectionPages()
-    {
-        
-    }
-
-    public function testCreateCollectionWithValidation()
     {
         
     }
