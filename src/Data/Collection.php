@@ -197,18 +197,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         return $this;
     }
 
-    /**
-     * set regular expression for collection row
-     *
-     * @param string $ruleKey
-     * @param callable $ruleValue
-     * @return $this
-     */
-    public function putPreparationCallback($ruleKey, callable $ruleValue = null)
-    {
-        return $this;
-    }
-
     public function setFilter()
     {
         
@@ -355,6 +343,63 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     //finished methods
+
+    /**
+     * set regular expression for collection row
+     *
+     * @param array $rules
+     * @return $this
+     */
+    public function putPreparationCallback(array $rules)
+    {
+        $this->_dataPreparationCallbacks = array_merge(
+            $this->_dataPreparationCallbacks,
+            $rules
+        );
+        return $this;
+    }
+
+    /**
+     * return all current preparation rules
+     *
+     * @return array
+     */
+    public function returnPreparationRules()
+    {
+        return $this->_dataPreparationCallbacks;
+    }
+
+    /**
+     * remove given preparation rule name or all rules
+     *
+     * @param null|string $rule
+     * @return $this
+     */
+    public function removePreparationRules($rule = null)
+    {
+        if (is_null($rule)) {
+            $this->_dataPreparationCallbacks = [];
+        } else {
+            unset($this->_dataPreparationCallbacks[$rule]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * prepare data on input
+     *
+     * @param mixed $data
+     * @return bool
+     */
+    protected function _prepareData($data)
+    {
+        foreach ($this->_validationRules as $rule) {
+            $data = $this->_callUserFunction($rule, null, $data, null);
+        }
+
+        return $data;
+    }
 
     /**
      * return information that collection has some errors
