@@ -330,18 +330,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         return $this;
     }
 
-    /**
-     * allow to prepare input or output data
-     * 
-     * @param mixed $data
-     * @param array $callbacks
-     * @return mixed
-     */
-    protected function _dataPreparation($data, array $callbacks)
-    {
-        return $data;
-    }
-
     //finished methods
 
     /**
@@ -387,14 +375,14 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * prepare data on input
+     * allow to prepare input or output data
      *
      * @param mixed $data
-     * @return bool
+     * @return mixed
      */
-    protected function _prepareData($data)
+    protected function _dataPreparation($data)
     {
-        foreach ($this->_validationRules as $rule) {
+        foreach ($this->_dataPreparationCallbacks as $rule) {
             $data = $this->_callUserFunction($rule, null, $data, null);
         }
 
