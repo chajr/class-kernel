@@ -38,7 +38,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     /**
      * check validation rules when add data to collection on object creation
      *
-     * @requires exampleCollection
      * @requires _exampleCollectionObject
      */
     public function testCreateCollectionWithValidation()
@@ -90,6 +89,33 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
             'validation_mismatch',
             $collection->returnObjectError()[0]['message']
         );
+    }
+
+    /**
+     * test data preparation when object is creating
+     * 
+     * @requires _exampleCollectionObject
+     */
+    public function testCreateCollectionWithDataPreparation()
+    {
+        $data               = $this->_exampleCollection();
+        $preparationRules   = [
+            'rule_1' => function ($index, $value) {
+            if ($value instanceof Object) {
+                $value->setTestKey('test key');
+            }
+
+            return $value;
+            },
+        ];
+
+        $collection = new Collection([
+            'data'          => $data,
+            'preparation'   => $preparationRules
+        ]);
+
+        $this->assertEquals('test key', $collection[7]->getTestKey());
+        $this->assertEquals('test key', $collection[8]->getTestKey());
     }
 
     /**
@@ -170,11 +196,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     }
 
     public function testArrayAccessToCollectionPages()
-    {
-        
-    }
-
-    public function testCreateCollectionWithDataPreparation()
     {
         
     }
