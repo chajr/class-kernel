@@ -49,19 +49,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             "data"=> "first data",
             "rule"=> "#^[\\d]+$#"
         ]);
-        $this->assertEquals($object->returnObjectError()[1], [
-            "message"=> "validation_mismatch",
-            "key"=> "data_third",
-            "data"=> "third data",
-            "rule"=>  'Closure [ <user> public method Test\{closure} ] {
-  @@ /home/zmp/ftp/CLASS/class-kernel/src/Test/ObjectTest.php 31 - 36
-
-  - Parameters [2] {
-    Parameter #0 [ <required> $key ]
-    Parameter #1 [ <required> $data ]
-  }
-}
-']);
+        $this->assertEquals($object->returnObjectError()[1]['message'], 'validation_mismatch');
+        $this->assertEquals($object->returnObjectError()[1]['key'], 'data_third');
+        $this->assertEquals($object->returnObjectError()[1]['data'], 'third data');
         $this->assertCount(2, $object->returnObjectError());
     }
 
@@ -828,6 +818,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testExportObjectAsString($first, $second)
     {
+        if (is_array($second)) {
+            $second = implode(', ', $second);
+        }
         $string = "$first, $second";
 
         $object = $this->_simpleObject($first, $second);
