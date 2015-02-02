@@ -160,9 +160,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
         $data                       = $this->_options['data'];
         $this->_processIniSection   = $this->_options['ini_section'];
 
+        $this->_beforeInitializeObject($data);
         $this->putValidationRule($this->_options['validation'])
             ->putPreparationCallback($this->_options['preparation'])
-            ->initializeObject($data);
+            ->_initializeObject($data);
 
         switch (true) {
             case is_array($data):
@@ -175,7 +176,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
                 break;
         }
 
-        $this->afterInitializeObject();
+        $this->_afterInitializeObject();
         $this->_objectCreation = false;
     }
 
@@ -292,16 +293,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         }
 
         return $data;
-    }
-
-    public function initializeObject()
-    {
-        
-    }
-
-    public function afterInitializeObject()
-    {
-        
     }
 
     /**
@@ -994,5 +985,35 @@ class Collection implements Serializable, ArrayAccess, Iterator
     public function isLoopByPagesEnabled()
     {
         return $this->_loopByPages;
+    }
+
+    /**
+     * can be overwritten by children objects to start with some special operations
+     * as parameter take data given to object by reference
+     *
+     * @param mixed $data
+     */
+    protected function _initializeObject(&$data)
+    {
+
+    }
+
+    /**
+     * can be overwritten by children objects to start with some special operations
+     */
+    protected function _afterInitializeObject()
+    {
+
+    }
+
+    /**
+     * can be overwritten by children objects to start with some special operations
+     * as parameter take data given to object by reference
+     *
+     * @param mixed $data
+     */
+    protected function _beforeInitializeObject($data)
+    {
+
     }
 }

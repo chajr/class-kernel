@@ -217,6 +217,7 @@ trait BlueObject
         $this->_integerKeyPrefix    = $this->_options['integer_key_prefix'];
         $this->_processIniSection   = $this->_options['ini_section'];
 
+        $this->_beforeInitializeObject($data);
         $this->putValidationRule($this->_options['validation'])
             ->putPreparationCallback($this->_options['preparation'])
             ->initializeObject($data);
@@ -2286,5 +2287,16 @@ trait BlueObject
     protected function _prepareData($key = null)
     {
         
+    }
+
+    /**
+     * can be overwritten by children objects to start with some special operations
+     * as parameter take data given to object by reference
+     *
+     * @param mixed $data
+     */
+    protected function _beforeInitializeObject($data)
+    {
+
     }
 }
