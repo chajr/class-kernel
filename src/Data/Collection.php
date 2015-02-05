@@ -304,9 +304,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function addElement($data, $type = null)
     {
-        $bool = $this->_validateData($data);
-        if (!$bool) {
-            return $this;
+        if ($this->_validationOn) {
+            $bool = $this->_validateData($data);
+            if (!$bool) {
+                return $this;
+            }
         }
 
         if ($this->_preparationOn) {
