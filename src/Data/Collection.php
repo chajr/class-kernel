@@ -263,6 +263,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     {
         if ($this->hasElement($element)) {
             unset($this->_COLLECTION[$element]);
+            $this->_recalculateCollectionIndexes();
         }
 
         return $this;
@@ -324,6 +325,26 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     //finished methods
+
+    /**
+     * after some changes in collection structure recalculate numeric indexes
+     * of collection elements
+     * 
+     * @return $this
+     */
+    protected function _recalculateCollectionIndexes()
+    {
+        $totalElements  = $this->count();
+        $indexList      = [];
+
+        for ($i = 0; $i < $totalElements; $i++) {
+            $indexList[] = $i;
+        }
+
+        $this->_COLLECTION= array_combine($indexList, $this->_COLLECTION);
+
+        return $this;
+    }
 
     /**
      * set regular expression for collection row
@@ -590,7 +611,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function removeElement($element)
     {
-        //recalculate indexes
         return $this->delete($element);
     }
 
