@@ -28,7 +28,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * 
      * @var array
      */
-    protected $_OriginalCollection = [];
+    protected $_originalCollection = [];
 
     /**
      * default page size
@@ -150,6 +150,13 @@ class Collection implements Serializable, ArrayAccess, Iterator
     protected $_objectCreation = true;
 
     /**
+     * store all new added data keys, to remove them when in eg. restore original data
+     * 
+     * @var array
+     */
+    protected $_newKeys = [];
+
+    /**
      * create collection object
      * 
      * @param array $options
@@ -254,22 +261,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * remove element from collection
-     * 
-     * @param int $element
-     * @return $this
-     */
-    public function delete($element)
-    {
-        if ($this->hasElement($element)) {
-            unset($this->_COLLECTION[$element]);
-            $this->_recalculateCollectionIndexes();
-        }
-
-        return $this;
-    }
-
-    /**
      * prepare collection before return
      * 
      * @param array|null $data
@@ -296,14 +287,62 @@ class Collection implements Serializable, ArrayAccess, Iterator
         return $data;
     }
 
+
+    //finished methods
+
+    /**
+     * remove element from collection
+     *
+     * @param int $index
+     * @return $this
+     */
+    public function delete($index)
+    {
+        if ($this->hasElement($index)) {
+            if (array_key_exists($index, $this->_originalCollection)
+                && !in_array($index, $this->_newKeys)
+            ) {
+                $this->_originalCollection[$index] = $this->_COLLECTION[$index];
+            }
+
+            $this->_deleteNewKey($index);
+            unset($this->_COLLECTION[$index]);
+            $this->_recalculateCollectionIndexes();
+            $this->_dataChanged = true;
+        }
+
+        return $this;
+    }
+
+    /**
+     * check that given index exist and allow to remove it and recalculate new index array
+     * 
+     * @param int $index
+     * @return $this
+     */
+    protected function _deleteNewKey($index)
+    {
+        $key = array_search($index, $this->_newKeys);
+
+        if ($key) {
+            unset($this->_newKeys[$key]);
+            $this->_recalculateCollectionNewIndexes();
+        } else {
+            array_walk($this->_newKeys, function(&$index) {
+                $index -=1;
+            });
+        }
+
+        return $this;
+    }
+
     /**
      * add one row element to collection
      * 
      * @param mixed $data
-     * @param null|string $type
      * @return $this
      */
-    public function addElement($data, $type = null)
+    public function addElement($data)
     {
         if ($this->_validationOn) {
             $bool = $this->_validateData($data);
@@ -320,11 +359,33 @@ class Collection implements Serializable, ArrayAccess, Iterator
         }
 
         $this->_COLLECTION[] = $data;
+        $this->_dataChanged  = true;
+
+        if (!$this->_objectCreation) {
+            $this->_newKeys[] = end(array_keys($this->_COLLECTION));
+        }
 
         return $this;
     }
 
-    //finished methods
+    /**
+     * recalculate indexes of new elements in collection
+     * 
+     * @return $this
+     */
+    protected function _recalculateCollectionNewIndexes()
+    {
+        $totalElements  = $this->count();
+        $totalNewKeys   = count($this->_newKeys);
+        $indexList      = [];
+
+        for ($i = $totalElements; $i < $totalNewKeys -2; $i++) {
+            $indexList[] = $i;
+        }
+
+        $this->_newKeys = $indexList;
+        return $this;
+    }
 
     /**
      * after some changes in collection structure recalculate numeric indexes
@@ -341,7 +402,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
             $indexList[] = $i;
         }
 
-        $this->_COLLECTION= array_combine($indexList, $this->_COLLECTION);
+        $this->_COLLECTION = array_combine($indexList, $this->_COLLECTION);
 
         return $this;
     }
@@ -622,7 +683,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function hasElement($index)
     {
-        return isset($this->_COLLECTION[$index]);
+        return array_key_exists($index, $this->_COLLECTION);
     }
 
     /**
