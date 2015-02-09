@@ -298,18 +298,15 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function delete($index)
     {
-        if ($this->hasElement($index)) {
-            if (array_key_exists($index, $this->_originalCollection)
-                && !in_array($index, $this->_newKeys)
-            ) {
-                $this->_originalCollection[$index] = $this->_COLLECTION[$index];
-            }
-
-            $this->_deleteNewKey($index);
-            unset($this->_COLLECTION[$index]);
-            $this->_recalculateCollectionIndexes();
-            $this->_dataChanged = true;
+        if (!$this->hasElement($index)) {
+            return $this;
         }
+
+        $this->_moveToOriginalCollection($index)
+            ->_deleteNewKey($index);
+        unset($this->_COLLECTION[$index]);
+        $this->_recalculateCollectionIndexes();
+        $this->_dataChanged = true;
 
         return $this;
     }
@@ -344,13 +341,84 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function addElement($data)
     {
-        if ($this->_validationOn) {
-            $bool = $this->_validateData($data);
-            if (!$bool) {
-                return $this;
-            }
+        $bool = $this->_validateData($data);
+        if (!$bool) {
+            return $this;
         }
 
+        $data                   = $this->_prepareData($data);
+        $this->_COLLECTION[]    = $data;
+        $this->_dataChanged     = true;
+
+        if (!$this->_objectCreation) {
+            $this->_newKeys[] = end(array_keys($this->_COLLECTION));
+        }
+
+        return $this;
+    }
+
+    /**
+     * allow to change data in given index
+     * 
+     * @param int $index
+     * @param mixed $newData
+     * @param null|string|Callable $callback
+     * @return $this
+     */
+    public function changeElement($index, $newData, $callback = null)
+    {
+        if (!$this->hasElement($index)) {
+            return $this;
+        }
+
+        $bool = $this->_validateData($newData);
+        if (!$bool) {
+            return $this;
+        }
+
+        $newData = $this->_prepareData($newData);
+        $this->_moveToOriginalCollection($index);
+
+        if ($callback) {
+            $this->_COLLECTION[$index] = $this->_callUserFunction(
+                $callback,
+                $index,
+                $newData,
+                null
+            );
+        } else {
+            $this->_COLLECTION[$index] = $newData;
+        }
+
+        return $this;
+    }
+
+    /**
+     * check that data on given index is part of base object
+     * and if is move it to original collection
+     * 
+     * @param int $index
+     * @return $this
+     */
+    protected function _moveToOriginalCollection($index)
+    {
+        if (array_key_exists($index, $this->_originalCollection)
+            && !in_array($index, $this->_newKeys)
+        ) {
+            $this->_originalCollection[$index] = $this->_COLLECTION[$index];
+        }
+
+        return $this;
+    }
+
+    /**
+     * launch data preparation
+     * 
+     * @param mixed $data
+     * @return mixed
+     */
+    protected function _prepareData($data)
+    {
         if ($this->_preparationOn) {
             $data = $this->_dataPreparation(
                 $data,
@@ -358,14 +426,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
             );
         }
 
-        $this->_COLLECTION[] = $data;
-        $this->_dataChanged  = true;
-
-        if (!$this->_objectCreation) {
-            $this->_newKeys[] = end(array_keys($this->_COLLECTION));
-        }
-
-        return $this;
+        return $data;
     }
 
     /**
@@ -504,6 +565,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     protected function _validateData($data)
     {
+        if (!$this->_validationOn) {
+            return true;
+        }
+
         $validateFlag = true;
         foreach ($this->_validationRules as $rule) {
             $bool = $this->_callUserFunction($rule, null, $data, null);
