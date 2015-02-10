@@ -784,6 +784,7 @@ trait BlueObject
             $mergedData         = array_merge($this->_DATA, $this->_originalDATA);
             $this->_DATA        = $this->_removeNewKeys($mergedData);
             $this->_dataChanged = false;
+            $this->_newKeys     = [];
         } else {
             if (array_key_exists($key, $this->_originalDATA)) {
                 $this->_DATA[$key] = $this->_originalDATA[$key];
@@ -794,14 +795,13 @@ trait BlueObject
     }
 
     /**
-     * this method set current DATA as original data
-     * replace original data by DATA and set data changed to false
+     * all data stored in object became original data
      *
      * @return $this
      */
     public function replaceDataArrays()
     {
-        $this->_originalDATA = $this->_DATA;
+        $this->_originalDATA = [];
         $this->_dataChanged  = false;
         $this->_newKeys      = [];
         return $this;

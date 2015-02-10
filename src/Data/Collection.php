@@ -187,24 +187,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         $this->_objectCreation = false;
     }
 
-    /**
-     * append array as collection elements
-     * 
-     * @param array $arrayData
-     * @return $this
-     */
-    public function appendArray(array $arrayData)
-    {
-        foreach ($arrayData as $data) {
-            $this->addElement($data);
-        }
-
-        if ($this->_objectCreation) {
-            return $this->_afterAppendDataToNewObject();
-        }
-        return $this;
-    }
-
     public function setFilter()
     {
         
@@ -236,11 +218,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     public function setCollection()
-    {
-        
-    }
-
-    public function getOriginalCollection()
     {
         
     }
@@ -291,6 +268,99 @@ class Collection implements Serializable, ArrayAccess, Iterator
     //finished methods
 
     /**
+     * replace changed data by original data
+     * set data changed to false only if restore whole data
+     *
+     * @param string|null $key
+     * @return $this
+     */
+    public function restoreData($key = null)
+    {
+        if (is_null($key)) {
+            $mergedData         = array_merge($this->_COLLECTION, $this->_originalCollection);
+            $this->_COLLECTION  = $this->_removeNewKeys($mergedData);
+            $this->_dataChanged = false;
+            $this->_newKeys     = [];
+        } else {
+            if (array_key_exists($key, $this->_originalCollection)) {
+                $this->_COLLECTION[$key] = $this->_originalCollection[$key];
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * remove all new keys from given data
+     *
+     * @param array $data
+     * @return array
+     */
+    protected function _removeNewKeys(array $data)
+    {
+        foreach ($this->_newKeys as $key) {
+            unset($data[$key]);
+        }
+        return $data;
+    }
+
+    /**
+     * all data stored in collection became original collection
+     *
+     * @return $this
+     */
+    public function replaceDataArrays()
+    {
+        $this->_originalCollection  = [];
+        $this->_dataChanged         = false;
+        $this->_newKeys             = [];
+        return $this;
+    }
+
+    /**
+     * append array as collection elements
+     *
+     * @param array $arrayData
+     * @return $this
+     */
+    public function appendArray(array $arrayData)
+    {
+        foreach ($arrayData as $data) {
+            $this->addElement($data);
+        }
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+        return $this;
+    }
+
+    /**
+     * return original data for key, before it was changed or whole original collection
+     * that method don't handle return data preparation
+     *
+     * @param null|string $key
+     * @return mixed
+     */
+    public function getOriginalCollection($key = null)
+    {
+        $this->_prepareData($key);
+
+        $mergedData = array_merge($this->_COLLECTION, $this->_originalCollection);
+        $data       = $this->_removeNewKeys($mergedData);
+
+        if (!$key) {
+            return $data;
+        }
+
+        if (array_key_exists($key, $data)) {
+            return $data[$key];
+        }
+
+        return null;
+    }
+
+    /**
      * remove element from collection
      *
      * @param int $index
@@ -326,7 +396,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
             $this->_recalculateCollectionNewIndexes();
         } else {
             array_walk($this->_newKeys, function(&$index) {
-                $index -=1;
+                $index -= 1;
             });
         }
 
