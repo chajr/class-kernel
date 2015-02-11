@@ -109,7 +109,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     protected $_preparationOn = true;
 
     /**
-     * allow to turn off/on data retrieve
+     * allow to turn off/on data retrieve preparation
      *
      * @var bool
      */
@@ -237,9 +237,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
         
     }
 
+    //finished methods
+
     /**
      * prepare collection before return
-     * 
+     *
      * @param array|null $data
      * @param bool $isSingleElement
      * @return mixed
@@ -254,18 +256,21 @@ class Collection implements Serializable, ArrayAccess, Iterator
             return $data;
         }
 
-        //work on collection
-        if (!$isSingleElement) {
-            //work on elements
+        $newData = [];
+        if ($isSingleElement) {
+            foreach ($this->_dataRetrieveCallbacks as $rule) {
+                $newData = $this->_callUserFunction($rule, null, $data, null);
+            }
         } else {
-            //work on single element
+            foreach ($this->_COLLECTION as $index => $data) {
+                foreach ($this->_dataRetrieveCallbacks as $rule) {
+                    $newData[$index] = $this->_callUserFunction($rule, $index, $data, null);
+                }
+            }
         }
 
-        return $data;
+        return $newData;
     }
-
-
-    //finished methods
 
     /**
      * replace changed data by original data
