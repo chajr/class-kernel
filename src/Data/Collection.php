@@ -13,6 +13,9 @@ namespace ClassKernel\Data;
 use Serializable;
 use ArrayAccess;
 use Iterator;
+use Zend\Serializer\Serializer;
+use Zend\Serializer\Exception\ExceptionInterface;
+use Exception;
 
 class Collection implements Serializable, ArrayAccess, Iterator
 {
@@ -177,6 +180,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
                 $this->appendArray($data);
                 break;
 
+            case $this->_options['type'] === 'serialized':
+                $this->unserialize($this->_options['data']);
+                break;
+
             //data provider object to handle lazy data loading for collection
 
             default:
@@ -222,22 +229,71 @@ class Collection implements Serializable, ArrayAccess, Iterator
         
     }
 
+    //finished methods
+
     /**
      * return serialized collection
-     * 
+     *
      * @return string
      */
     public function serialize()
     {
-        return serialize($this->_prepareCollection());
+        $data = null;
+
+        try {
+            $data = Serializer::serialize($this->_prepareCollection());
+        } catch (ExceptionInterface $exception) {
+            $this->_addException($exception);
+        }
+
+        return $data;
     }
 
+    /**
+     * apply serialized collection into object
+     *
+     * @param string $string
+     * @return $this
+     */
     public function unserialize($string)
     {
-        
+        $data = [];
+
+        try {
+            $data = Serializer::unserialize($string);
+        } catch (ExceptionInterface $exception) {
+            $this->_addException($exception);
+        }
+
+        foreach ($data as $element) {
+            $this->addElement($element);
+        }
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+
+        return $this;
     }
 
-    //finished methods
+    /**
+     * create exception message and set it in object
+     *
+     * @param Exception $exception
+     * @return $this
+     */
+    protected function _addException(Exception $exception)
+    {
+        $this->_hasErrors = true;
+        $this->_errorsList[$exception->getCode()] = [
+            'message'   => $exception->getMessage(),
+            'line'      => $exception->getLine(),
+            'file'      => $exception->getFile(),
+            'trace'     => $exception->getTraceAsString(),
+        ];
+
+        return $this;
+    }
 
     /**
      * prepare collection before return
