@@ -219,11 +219,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         
     }
 
-    public function getCollection()
-    {
-        
-    }
-
     public function setCollection()
     {
         
@@ -780,9 +775,9 @@ class Collection implements Serializable, ArrayAccess, Iterator
     /**
      * return all elements from collection
      *
-     * @return array
+     * @return mixed
      */
-    public function getFullCollection()
+    public function getCollection()
     {
         return $this->_prepareCollection();
     }
