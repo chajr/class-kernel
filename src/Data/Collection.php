@@ -307,20 +307,19 @@ class Collection implements Serializable, ArrayAccess, Iterator
             return $data;
         }
 
-        $newData = [];
         if ($isSingleElement) {
             foreach ($this->_dataRetrieveCallbacks as $rule) {
-                $newData = $this->_callUserFunction($rule, null, $data, null);
+                $data = $this->_callUserFunction($rule, null, $data, null);
             }
         } else {
-            foreach ($this->_COLLECTION as $index => $data) {
+            foreach ($this->_COLLECTION as $index => $element) {
                 foreach ($this->_dataRetrieveCallbacks as $rule) {
-                    $newData[$index] = $this->_callUserFunction($rule, $index, $data, null);
+                    $data[$index] = $this->_callUserFunction($rule, $index, $element, null);
                 }
             }
         }
 
-        return $newData;
+        return $data;
     }
 
     /**
@@ -595,7 +594,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * set regular expression for collection row
+     * add data preparation rules before add data into collection
      *
      * @param array $rules
      * @return $this
@@ -631,6 +630,48 @@ class Collection implements Serializable, ArrayAccess, Iterator
             $this->_dataPreparationCallbacks = [];
         } else {
             unset($this->_dataPreparationCallbacks[$rule]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * add data preparation rules before add data into collection
+     *
+     * @param array $rules
+     * @return $this
+     */
+    public function putRetrieveCallback(array $rules)
+    {
+        $this->_dataRetrieveCallbacks = array_merge(
+            $this->_dataRetrieveCallbacks,
+            $rules
+        );
+        return $this;
+    }
+
+    /**
+     * return all current preparation rules
+     *
+     * @return array
+     */
+    public function returnRetrieveRules()
+    {
+        return $this->_dataRetrieveCallbacks;
+    }
+
+    /**
+     * remove given preparation rule name or all rules
+     *
+     * @param null|string $rule
+     * @return $this
+     */
+    public function removeRetrieveRules($rule = null)
+    {
+        if (is_null($rule)) {
+            $this->_dataRetrieveCallbacks = [];
+        } else {
+            unset($this->_dataRetrieveCallbacks[$rule]);
         }
 
         return $this;
@@ -1010,11 +1051,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * allow to stop data preparation before add tro object
+     * allow to stop data preparation before add ito object
      *
      * @return $this
      */
-    public function stopOutputPreparation()
+    public function stopInputPreparation()
     {
         $this->_preparationOn = false;
         return $this;
@@ -1025,7 +1066,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      *
      * @return $this
      */
-    public function startOutputPreparation()
+    public function startInputPreparation()
     {
         $this->_preparationOn = true;
         return $this;
@@ -1036,7 +1077,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      *
      * @return $this
      */
-    public function stopInputPreparation()
+    public function stopOutputPreparation()
     {
         $this->_retrieveOn = false;
         return $this;
@@ -1047,7 +1088,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      *
      * @return $this
      */
-    public function startInputPreparation()
+    public function startOutputPreparation()
     {
         $this->_retrieveOn = true;
         return $this;
