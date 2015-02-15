@@ -919,49 +919,101 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
+     * return list of indexed to update or delete when iterating by pages
+     * 
+     * @param int $page
+     * @return array
+     */
+    protected function _getIndexesToUpdate($page)
+    {
+        $indexes    = [];
+        $startPage  = $page * $this->_pageSize;
+
+        for ($i = $startPage; $i < $page; $i++) {
+            if ($this->_isPageAllowed($i)) {
+                $indexes[] = $i;
+            }
+        }
+
+        return $indexes;
+    }
+
+    /**
      * check that data for given key exists
      *
-     * @param string $offset
+     * @param int $offset
      * @return bool
      */
     public function offsetExists($offset)
     {
-        return $this->hasElement($offset);
+        if ($this->_loopByPages) {
+            return $this->_isPageAllowed($offset +1);
+        } else {
+            return $this->hasElement($offset);
+        }
     }
 
     /**
      * return data for given key
      *
-     * @param string $offset
+     * @param int $offset
      * @return mixed
      */
     public function offsetGet($offset)
     {
-        return $this->getElement($offset);
+        if ($this->_loopByPages) {
+            return $this->getPage($offset +1);
+        } else {
+            return $this->getElement($offset);
+        }
     }
 
     /**
      * set data for given key
      *
-     * @param string|null $offset
+     * @param int|null $offset
      * @param mixed $value
      * @return $this
      */
     public function offsetSet($offset, $value)
     {
-        $this->addElement($value, $offset);
+        if ($this->_loopByPages) {
+            $indexesToUpdate    = $this->_getIndexesToUpdate($offset +1);
+            $counter            = 0;
+
+            foreach ($value as $element) {
+                if (empty($indexesToUpdate)) {
+                    return $this;
+                }
+                $this->changeElement($indexesToUpdate[$counter], $element);
+                $counter++;
+                unset($indexesToUpdate[$counter]);
+            }
+        } else {
+            $this->addElement($value, $offset);
+        }
+
         return $this;
     }
 
     /**
      * remove data for given key
      *
-     * @param string $offset
+     * @param int $offset
      * @return $this
      */
     public function offsetUnset($offset)
     {
-        return $this->delete($offset);
+        if ($this->_loopByPages) {
+            $indexesToRemove = $this->_getIndexesToUpdate($offset +1);
+            foreach ($indexesToRemove as $index) {
+                $this->delete($index);
+            }
+        } else {
+            $this->delete($offset);
+        }
+
+        return $this;
     }
 
     /**
@@ -972,8 +1024,14 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function current()
     {
-        current($this->_COLLECTION);
-        return $this->getElement($this->key());
+        $key = $this->key();
+
+        if ($this->_loopByPages) {
+            return $this->getPage($key);
+        } else {
+            current($this->_COLLECTION);
+            return $this->getElement($key);
+        }
     }
 
     /**
@@ -983,7 +1041,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function key()
     {
-        return key($this->_COLLECTION);
+        if ($this->_loopByPages) {
+            return $this->getCurrentPage();
+        } else {
+            return key($this->_COLLECTION);
+        }
     }
 
     /**
@@ -994,8 +1056,15 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function next()
     {
-        next($this->_COLLECTION);
-        return $this->getElement($this->key());
+        $key = $this->key();
+
+        if ($this->_loopByPages) {
+            $this->setCurrentPage($key +1);
+            return $this->getPage($this->getCurrentPage());
+        } else {
+            next($this->_COLLECTION);
+            return $this->getElement($key);
+        }
     }
 
     /**
@@ -1005,7 +1074,12 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function rewind()
     {
-        return reset($this->_COLLECTION);
+        if ($this->_loopByPages) {
+            $this->setCurrentPage(1);
+            return $this->getFirstPage();
+        } else {
+            return reset($this->_COLLECTION);
+        }
     }
 
     /**
@@ -1015,7 +1089,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function valid()
     {
-        return key($this->_COLLECTION) !== null;
+        if ($this->_loopByPages) {
+            return $this->_isPageAllowed($this->key());
+        } else {
+            return key($this->_COLLECTION) !== null;
+        }
     }
 
     /**
@@ -1286,7 +1364,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * @param bool $bool
      * @return $this
      */
-    public function loopPages($bool = true)
+    public function loopByPages($bool = true)
     {
         $this->_loopByPages = (bool)$bool;
         return $this;
