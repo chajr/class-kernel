@@ -119,13 +119,43 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * test data preparation when collection return some elements
+     *
+     * @requires _exampleCollectionObject
+     */
+    public function testReturnCollectionWithDataPreparation()
+    {
+        $data               = $this->_exampleCollection();
+        $preparationRules   = [
+            'rule_1' => function ($index, $value) {
+                if ($value instanceof Object) {
+                    $value->setTestKey('test return key');
+                }
+
+                return $value;
+            },
+        ];
+
+        $collection = new Collection([
+            'data'          => $data,
+        ]);
+
+        $this->assertNull($collection[7]->getTestKey());
+        $this->assertNull($collection[8]->getTestKey());
+
+        $collection->putRetrieveCallback($preparationRules);
+
+        $this->assertEquals('test return key', $collection[7]->getTestKey());
+        $this->assertEquals('test return key', $collection[8]->getTestKey());
+    }
+
+    /**
      * check usage collection as array (access data and loop processing)
      *
      * @param Collection $collection
      * @param array $data
      * @dataProvider exampleCollectionObject
      * @requires exampleCollection
-     * @requires _exampleCollectionObject
      */
     public function testArrayAccessForCollection($collection, array $data)
     {
@@ -141,7 +171,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
      * @param array $data
      * @dataProvider exampleCollectionObject
      * @requires exampleCollection
-     * @requires _exampleCollectionObject
      */
     public function testBasicAccessToCollectionElements($collection, array $data)
     {
@@ -159,7 +188,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
      * @param Collection $collection
      * @dataProvider exampleCollectionObject
      * @requires exampleCollection
-     * @requires _exampleCollectionObject
      */
     public function testPageInformation($collection)
     {
@@ -175,7 +203,6 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
      * @param array $data
      * @dataProvider exampleCollectionObject
      * @requires exampleCollection
-     * @requires _exampleCollectionObject
      */
     public function testPageAccessForCollection($collection, array $data)
     {
@@ -195,22 +222,42 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals([$data[0], $data[1]], $collection->getPreviousPage());
     }
 
-    public function testArrayAccessToCollectionPages()
+    /**
+     * test array access to collection using pages
+     *
+     * @param Collection $collection
+     * @param array $data
+     * @dataProvider exampleCollectionObject
+     * @requires exampleCollection
+     */
+    public function testArrayAccessToCollectionPages($collection, array $data)
     {
-        
-    }
+        $collection->setPageSize(2);
 
-    public function testRemovingElementFromCollection()
-    {
-        
-    }
+        $this->assertEquals($data[0], $collection[0]);
 
-    public function testReturnCollectionWithDataPreparation()
-    {
+        $collection->loopByPages();
+        $this->assertTrue($collection->isLoopByPagesEnabled());
+
         
     }
 
     public function testAddDataWithOriginalDataCheck()
+    {
+        
+    }
+
+    public function testIndexRecalculation()
+    {
+        
+    }
+
+    public function testElementCRUD()
+    {
+        
+    }
+
+    public function testElementCRUDWithOriginalData()
     {
         
     }
