@@ -299,7 +299,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     protected function _prepareCollection($data = null, $isSingleElement = false)
     {
-        if (is_null($data)) {
+        if (is_null($data) && !$isSingleElement) {
             $data = $this->_COLLECTION;
         }
 
@@ -416,24 +416,14 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * remove element from collection
+     * alias for delete method
      *
      * @param int $index
      * @return $this
      */
     public function delete($index)
     {
-        if (!$this->hasElement($index)) {
-            return $this;
-        }
-
-        $this->_moveToOriginalCollection($index)
-            ->_deleteNewKey($index);
-        unset($this->_COLLECTION[$index]);
-        $this->_recalculateCollectionIndexes();
-        $this->_dataChanged = true;
-
-        return $this;
+        return $this->removeElement($index);
     }
 
     /**
@@ -897,14 +887,48 @@ class Collection implements Serializable, ArrayAccess, Iterator
     }
 
     /**
-     * alias for delete method
+     * alias for getElement method
      * 
-     * @param int $element
+     * @param int $index
+     * @return mixed|null
+     */
+    public function get($index)
+    {
+        return $this->getElement($index);
+    }
+
+    /**
+     * alias for changeElement method
+     * 
+     * @param int $index
+     * @param mixed $newData
+     * @param null|string|Callable $callback
+     * @return $this
+     */
+    public function change($index, $newData, $callback = null)
+    {
+        return $this->changeElement($index, $newData, $callback);
+    }
+
+    /**
+     * remove element from collection
+     * 
+     * @param int $index
      * @return Collection
      */
-    public function removeElement($element)
+    public function removeElement($index)
     {
-        return $this->delete($element);
+        if (!$this->hasElement($index)) {
+            return $this;
+        }
+
+        $this->_moveToOriginalCollection($index)
+            ->_deleteNewKey($index);
+        unset($this->_COLLECTION[$index]);
+        $this->_recalculateCollectionIndexes();
+        $this->_dataChanged = true;
+
+        return $this;
     }
 
     /**
