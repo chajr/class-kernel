@@ -239,22 +239,46 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $collection->loopByPages();
         $this->assertTrue($collection->isLoopByPagesEnabled());
 
-        
+        $this->assertEquals([$data[0], $data[1]], $collection[0]);
+        $this->assertEquals([$data[4], $data[5]], $collection[2]);
+
+        foreach ($collection as $index => $element) {
+            $this->assertEquals($collection->getPage($index), $element);
+        }
     }
 
-    public function testAddDataWithOriginalDataCheck()
+    /**
+     * test add, modify and delete elements from collection
+     *
+     * @param Collection $collection
+     * @dataProvider exampleCollectionObject
+     * @requires exampleCollection
+     */
+    public function testElementCRUD($collection)
     {
-        
-    }
+        $collection->addElement('some new element');
 
-    public function testIndexRecalculation()
-    {
-        
-    }
+        $this->assertEquals(10, $collection->count());
+        $this->assertEquals('some new element', $collection->get(9));
 
-    public function testElementCRUD()
-    {
-        
+        $collection->delete(3);
+        $this->assertEquals(9, $collection->count());
+        $this->assertEquals('some new element', $collection->get(8));
+
+        $collection->addElement('some new element 2');
+        $this->assertEquals('some new element 2', $collection->get(9));
+
+        $collection->changeElement(0, 'changed lorem ipsum');
+        $this->assertEquals('changed lorem ipsum', $collection->getElement(0));
+
+        $collection->changeElement(7, 'new data', function($index, $newData, $collection) {
+            /** @var Collection $collection*/
+            $object = $collection->getElement($index);
+            $object->setNewData($newData);
+
+            return $object;
+        });
+        $this->assertEquals('new data', $collection->getElement(7)->getNewData());
     }
 
     public function testElementCRUDWithOriginalData()
