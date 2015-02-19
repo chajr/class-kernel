@@ -517,7 +517,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     protected function _moveToOriginalCollection($index)
     {
-        if (array_key_exists($index, $this->_originalCollection)
+        if (!array_key_exists($index, $this->_originalCollection)
             && !in_array($index, $this->_newKeys)
         ) {
             $this->_originalCollection[$index] = $this->_COLLECTION[$index];
