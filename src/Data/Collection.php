@@ -401,15 +401,26 @@ class Collection implements Serializable, ArrayAccess, Iterator
     {
         $this->_prepareData($key);
 
-        $mergedData = array_merge($this->_COLLECTION, $this->_originalCollection);
-        $data       = $this->_removeNewKeys($mergedData);
+        $data               = $this->_removeNewKeys($this->_COLLECTION);
+        $oldSize            = count($data) + count($this->_originalCollection);
+        $originalCollection = [];
+        $index              = 0;
 
-        if (!$key) {
-            return $data;
+        for ($i = 0; $i < $oldSize; $i++) {
+            if (array_key_exists($i, $this->_originalCollection)) {
+                $originalCollection[$i] = $this->_originalCollection[$i];
+                $index++;
+            } else {
+                $originalCollection[$i] = $data[$i - $index];
+            }
         }
 
-        if (array_key_exists($key, $data)) {
-            return $data[$key];
+        if (!$key) {
+            return $originalCollection;
+        }
+
+        if (array_key_exists($key, $originalCollection)) {
+            return $originalCollection[$key];
         }
 
         return null;
