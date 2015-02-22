@@ -146,6 +146,13 @@ class Collection implements Serializable, ArrayAccess, Iterator
     ];
 
     /**
+     * store size of original given collection
+     * 
+     * @var int
+     */
+    protected $_originalCollectionSize = 0;
+
+    /**
      * inform append* methods that data was set in object creation
      *
      * @var bool
@@ -332,10 +339,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
     public function restoreData($key = null)
     {
         if (is_null($key)) {
-            $mergedData         = array_merge($this->_COLLECTION, $this->_originalCollection);
-            $this->_COLLECTION  = $this->_removeNewKeys($mergedData);
-            $this->_dataChanged = false;
-            $this->_newKeys     = [];
+            $mergedData                     = array_merge($this->_COLLECTION, $this->_originalCollection);
+            $this->_COLLECTION              = $this->_removeNewKeys($mergedData);
+            $this->_dataChanged             = false;
+            $this->_newKeys                 = [];
+            $this->_originalCollectionSize  = $this->count();
         } else {
             if (array_key_exists($key, $this->_originalCollection)) {
                 $this->_COLLECTION[$key] = $this->_originalCollection[$key];
@@ -366,9 +374,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function replaceDataArrays()
     {
-        $this->_originalCollection  = [];
-        $this->_dataChanged         = false;
-        $this->_newKeys             = [];
+        $this->_originalCollection      = [];
+        $this->_dataChanged             = false;
+        $this->_newKeys                 = [];
+        $this->_originalCollectionSize  = $this->count();
         return $this;
     }
 
@@ -396,22 +405,23 @@ class Collection implements Serializable, ArrayAccess, Iterator
      *
      * @param null|string $key
      * @return mixed
+     * @todo rebuild deletion for collection
      */
     public function getOriginalCollection($key = null)
     {
         $this->_prepareData($key);
 
         $data               = $this->_removeNewKeys($this->_COLLECTION);
-        $oldSize            = count($data) + count($this->_originalCollection);
         $originalCollection = [];
         $index              = 0;
 
-        for ($i = 0; $i < $oldSize; $i++) {
-            if (array_key_exists($i, $this->_originalCollection)) {
+        for ($i = 0; $i < $this->_originalCollectionSize; $i++) {
+            if (!array_key_exists($i, $this->_originalCollection)) {
+//                $originalCollection[$i] = $data[$i - $index];
+                $originalCollection[$i] = $data[$i];
+            } else {
                 $originalCollection[$i] = $this->_originalCollection[$i];
                 $index++;
-            } else {
-                $originalCollection[$i] = $data[$i - $index];
             }
         }
 
@@ -478,6 +488,8 @@ class Collection implements Serializable, ArrayAccess, Iterator
 
         if (!$this->_objectCreation) {
             $this->_newKeys[] = end(array_keys($this->_COLLECTION));
+        } else {
+            $this->_originalCollectionSize++;
         }
 
         return $this;
