@@ -281,7 +281,33 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('new data', $collection->getElement(7)->getNewData());
     }
 
-    public function testElementCRUDWithOriginalData()
+    /**
+     * test add, modify and delete elements from collection with original collection save
+     *
+     * @param Collection $collection
+     * @dataProvider exampleCollectionObject
+     * @requires exampleCollection
+     */
+    public function testElementCRUDWithOriginalData($collection)
+    {
+        $originalCollection = clone $collection;
+        $collection->addElement('some new element');
+
+        $this->assertNotEquals($collection->getCollection(), $collection->getOriginalCollection());
+        $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
+
+        $collection->addElement('some new element 2');
+        $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
+
+        $collection->changeElement(0, 'changed lorem ipsum');
+        $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
+
+        $collection->delete(3);
+        $this->assertNotEquals($collection->getCollection(), $collection->getOriginalCollection());
+        $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
+    }
+
+    public function testOriginalCollectionRevertAndReplace()
     {
         
     }
