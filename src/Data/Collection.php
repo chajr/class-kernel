@@ -201,38 +201,6 @@ class Collection implements Serializable, ArrayAccess, Iterator
         $this->_objectCreation = false;
     }
 
-    public function setFilter()
-    {
-        
-    }
-
-    public function getFilters()
-    {
-        
-    }
-
-    public function resetFilters()
-    {
-        
-    }
-
-    public function setOrder()
-    {
-        
-    }
-
-    public function getOrder()
-    {
-        
-    }
-
-    public function setCollection()
-    {
-        
-    }
-
-    //finished methods
-
     /**
      * return serialized collection
      *
