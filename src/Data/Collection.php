@@ -191,7 +191,25 @@ class Collection implements Serializable, ArrayAccess, Iterator
                 $this->unserialize($this->_options['data']);
                 break;
 
-            //data provider object to handle lazy data loading for collection
+            case $this->_options['type'] === 'json':
+                $this->appendJson($data);
+                break;
+
+            case $this->_options['type'] === 'xml':
+                $this->appendXml($data);
+                break;
+
+            case $this->_options['type'] === 'simple_xml':
+                $this->appendSimpleXml($data);
+                break;
+
+            case $this->_options['type'] === 'csv':
+                $this->appendCsv($data);
+                break;
+
+            case $this->_options['type'] === 'ini':
+                $this->appendIni($data);
+                break;
 
             default:
                 break;
@@ -199,6 +217,62 @@ class Collection implements Serializable, ArrayAccess, Iterator
 
         $this->_afterInitializeObject();
         $this->_objectCreation = false;
+    }
+
+    /**
+     * apply given json data as object collection
+     *
+     * @param string $data
+     * @return $this
+     */
+    public function appendJson($data)
+    {
+        return $this;
+    }
+
+    /**
+     * apply given xml data as object collection
+     *
+     * @param $data string
+     * @return $this
+     */
+    public function appendSimpleXml($data)
+    {
+        return $this;
+    }
+
+    /**
+     * apply given xml data as object collection
+     * also handling attributes
+     *
+     * @param $data string
+     * @return $this
+     */
+    public function appendXml($data)
+    {
+        return $this;
+    }
+
+    /**
+     * allow to set ini data into object
+     *
+     * @param string $data
+     * @return $this
+     */
+    public function appendIni($data)
+    {
+        return $this;
+    }
+
+    /**
+     * allow to set csv data into object
+     *
+     * @param string $data
+     * @return $this
+     */
+    public function appendCsv($data)
+    {
+        return $this;
     }
 
     /**
