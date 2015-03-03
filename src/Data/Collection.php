@@ -227,6 +227,20 @@ class Collection implements Serializable, ArrayAccess, Iterator
      */
     public function appendJson($data)
     {
+        $jsonData = json_decode($data, true);
+
+        if (is_array($jsonData)) {
+            $this->appendArray($jsonData);
+        } else {
+            $this->_hasErrors = true;
+            $this->_errorsList[] = 'incorrect_json_data';
+            return $this;
+        }
+
+        if ($this->_objectCreation) {
+            return $this->_afterAppendDataToNewObject();
+        }
+
         return $this;
     }
 
