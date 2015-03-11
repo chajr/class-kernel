@@ -195,21 +195,21 @@ class Collection implements Serializable, ArrayAccess, Iterator
                 $this->appendJson($data);
                 break;
 
-            case $this->_options['type'] === 'xml':
-                $this->appendXml($data);
-                break;
-
-            case $this->_options['type'] === 'simple_xml':
-                $this->appendSimpleXml($data);
-                break;
-
-            case $this->_options['type'] === 'csv':
-                $this->appendCsv($data);
-                break;
-
-            case $this->_options['type'] === 'ini':
-                $this->appendIni($data);
-                break;
+//            case $this->_options['type'] === 'xml':
+//                $this->appendXml($data);
+//                break;
+//
+//            case $this->_options['type'] === 'simple_xml':
+//                $this->appendSimpleXml($data);
+//                break;
+//
+//            case $this->_options['type'] === 'csv':
+//                $this->appendCsv($data);
+//                break;
+//
+//            case $this->_options['type'] === 'ini':
+//                $this->appendIni($data);
+//                break;
 
             default:
                 break;
@@ -250,10 +250,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * @param $data string
      * @return $this
      */
-    public function appendSimpleXml($data)
-    {
-        return $this;
-    }
+//    public function appendSimpleXml($data)
+//    {
+//        return $this;
+//    }
 
     /**
      * apply given xml data as object collection
@@ -262,10 +262,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * @param $data string
      * @return $this
      */
-    public function appendXml($data)
-    {
-        return $this;
-    }
+//    public function appendXml($data)
+//    {
+//        return $this;
+//    }
 
     /**
      * allow to set ini data into object
@@ -273,10 +273,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * @param string $data
      * @return $this
      */
-    public function appendIni($data)
-    {
-        return $this;
-    }
+//    public function appendIni($data)
+//    {
+//        return $this;
+//    }
 
     /**
      * allow to set csv data into object
@@ -284,10 +284,10 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * @param string $data
      * @return $this
      */
-    public function appendCsv($data)
-    {
-        return $this;
-    }
+//    public function appendCsv($data)
+//    {
+//        return $this;
+//    }
 
     /**
      * return serialized collection
