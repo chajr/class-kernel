@@ -11,6 +11,7 @@ namespace Test;
 
 use ClassKernel\Data\Collection;
 use ClassKernel\Data\Object;
+use Zend\Serializer\Serializer;
 
 class CollectionTest extends \PHPUnit_Framework_TestCase
 {
@@ -30,6 +31,50 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
 
         $collection = new Collection;
         $collection->appendArray($data);
+
+        $this->assertEquals('lorem ipsum', $collection->first());
+        $this->assertEquals($data[1]['data_first'], $collection->getElement(1)['data_first']);
+    }
+    /**
+     * test basic object creation with json data
+     *
+     * @requires exampleCollection
+     * @requires _exampleCollectionObject
+     */
+    public function testCreateJsonCollection()
+    {
+        $data = $this->_exampleCollection();
+        unset($data[7]);
+        unset($data[8]);
+
+        $json = json_encode($data);
+
+        $collection = new Collection([
+            'data'  => $json,
+            'type'  => 'json'
+        ]);
+
+        $this->assertEquals('lorem ipsum', $collection->first());
+        $this->assertEquals($data[1]['data_first'], $collection->getElement(1)['data_first']);
+    }
+    /**
+     * test basic object creation with serialized data
+     *
+     * @requires exampleCollection
+     * @requires _exampleCollectionObject
+     */
+    public function testCreateSerializedCollection()
+    {
+        $data = $this->_exampleCollection();
+        unset($data[7]);
+        unset($data[8]);
+
+        $serialized = Serializer::serialize($data);
+        
+        $collection = new Collection([
+            'data'  => $serialized,
+            'type'  => 'serialized'
+        ]);
 
         $this->assertEquals('lorem ipsum', $collection->first());
         $this->assertEquals($data[1]['data_first'], $collection->getElement(1)['data_first']);
@@ -307,12 +352,26 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
     }
 
-    public function testOriginalCollectionRevertAndReplace()
+    /**
+     * test add, modify and delete elements from collection with original collection save
+     *
+     * @param Collection $collection
+     * @dataProvider exampleCollectionObject
+     * @requires exampleCollection
+     */
+    public function testOriginalCollectionRevertAndReplace($collection)
     {
-        
-    }
+        $originalCollection = clone $collection;
+        $collection->addElement('some new element');
+        $collection->addElement('some new element 2');
+        $collection->changeElement(0, 'changed lorem ipsum');
 
-    //add create collection with other than array data types
+        $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
+
+        $collection->restoreData();
+
+        $this->assertEquals($originalCollection->getCollection(), $collection->getCollection());
+    }
 
     /**
      * create collection object for test
