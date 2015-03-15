@@ -543,7 +543,8 @@ class Collection implements Serializable, ArrayAccess, Iterator
         $this->_dataChanged     = true;
 
         if (!$this->_objectCreation) {
-            $this->_newKeys[] = end(array_keys($this->_COLLECTION));
+            $keys               = array_keys($this->_COLLECTION);
+            $this->_newKeys[]   = end($keys);
         } else {
             $this->_originalCollectionSize++;
         }
