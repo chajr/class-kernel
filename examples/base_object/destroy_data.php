@@ -4,17 +4,17 @@
 $object->unsetSecondData()
 var_dump($object->getData())</pre>
 </code>
-<?php $object->unsetData('first_data')?>
+<?php $object->destroy('first_data')?>
 <?php $object->unsetSecondData()?>
-<pre><?php var_dump($object->getData())?></pre>
+<pre><?php var_dump($object->get())?></pre>
 
 <h5>Destroy all keys</h5>
 <code>
 <pre>$object->unsetData()
 var_dump($object->getData())</pre>
 </code>
-<?php $object->unsetData()?>
-<pre><?php var_dump($object->getData())?></pre>
+<?php $object->destroy()?>
+<pre><?php var_dump($object->get())?></pre>
 
 <h5>Set data to null</h5>
 <code>
@@ -22,6 +22,6 @@ var_dump($object->getData())</pre>
 $objectArray->clearSecondData()
 var_dump($objectArray->getData())</pre>
 </code>
-<?php $objectArray->clearData('first_data') ?>
+<?php $objectArray->clear('first_data') ?>
 <?php $objectArray->clearSecondData() ?>
-<pre><?php var_dump($objectArray->getData())?></pre>
+<pre><?php var_dump($objectArray->get())?></pre>

@@ -3,13 +3,17 @@
 <pre>$validateObject = new ClassKernel\Data\Object()
 $validateObject->putValidationRule('#^test_[\w]+#', '#^[\d]{2}$#');
 $validateObject->putValidationRule('#[\w]+_new$#', '#^[a-z]+$#');
-$validateObject->putValidationRule('#special_key#', '#^[a-z]+$#');
+$validateObject->putValidationRule('#special_key#', function ($key, $data) {
+    return preg_match('#^[a-z]+$#', $data);
+});
 $validateObject->returnValidationRule()</pre>
 </code>
 <?php $validateObject = new ClassKernel\Data\Object()?>
 <?php $validateObject->putValidationRule('#^test_[\w]+#', '#^[\d]{2}$#');?>
 <?php $validateObject->putValidationRule('#[\w]+_new$#', '#^[a-z]+$#');?>
-<?php $validateObject->putValidationRule('#special_key#', '#^[a-z]+$#');?>
+<?php $validateObject->putValidationRule('#special_key#', function ($key, $data) {
+    return preg_match('#^[a-z]+$#', $data);
+});?>
 <pre><?php var_dump($validateObject->returnValidationRule())?></pre>
 
 <h5>Set data with comparison</h5>

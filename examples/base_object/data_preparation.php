@@ -57,7 +57,7 @@ $testObject->setTestKey('test data');
 $testObject->setTestNext('test data next');
 $testObject->setNn('test nn');
 $testObject->setCallback('test callback');
-var_dump($testObject->getData());</pre>
+var_dump($testObject->get());</pre>
 </code>
 <?php
 $testObject->putPreparationCallback([
@@ -74,7 +74,7 @@ $testObject->setTestNext('test data next');
 $testObject->setNn('test nn');
 $testObject->setCallback('test callback');
 ?>
-<pre><?php var_dump($testObject->getData());?></pre>
+<pre><?php var_dump($testObject->get());?></pre>
 
 <h5>Get data</h5>
 <code>

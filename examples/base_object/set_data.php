@@ -3,8 +3,8 @@
 <pre>$object = new ClassKernel\Data\Object();
 $object->setFirstData(1);
 $object->setSecondData(2);
-$object->setData('third_data', 3);
-$object->setData([
+$object->set('third_data', 3);
+$object->set([
     'fourth_data' => 4,
     'fifth_data'  => 5
 ]);</pre>
@@ -13,8 +13,8 @@ $object->setData([
 $object = new ClassKernel\Data\Object();
 $object->setFirstData(1);
 $object->setSecondData(2);
-$object->setData('third_data', 3);
-$object->setData([
+$object->set('third_data', 3);
+$object->set([
     'fourth_data' => 4,
     'fifth_data'  => 5
 ]);
@@ -36,16 +36,16 @@ $objectJson = new ClassKernel\Data\Object([
     'type' => 'json'
 ]);
 
-$std = new stdClass();
+$std                = new stdClass();
 $std->first_data    = 'a';
 $std->second_data   = 'b';
 $std->third_data    = 'c';
-$serialized = serialize($std);
-$objectSerialized = new ClassKernel\Data\Object([
+$serialized         = serialize($std);
+$objectSerialized   = new ClassKernel\Data\Object([
     'data' => $serialized,
     'type' => 'serialized'
 ]);
-    
+
 $std = new stdClass();
 $std->first_data    = 'a';
 $std->second_data   = 'b';
@@ -119,10 +119,16 @@ $objectXml = new ClassKernel\Data\Object([
 <h5>Change existing key with the same data</h5>
 <code>
 <pre>$objectArray->setFirstData('a');
+var_dump($objectArray->dataChanged());
+$objectArray->setFirstData('b');
 var_dump($objectArray->dataChanged());</pre>
 </code>
 <?php
 $objectArray->setFirstData('a');
+echo '<pre>';
+var_dump($objectArray->dataChanged());
+echo '</pre>';
+$objectArray->setFirstData('b');
 echo '<pre>';
 var_dump($objectArray->dataChanged());
 echo '</pre>';
@@ -131,11 +137,11 @@ echo '</pre>';
 <h5>Created objects dump</h5>
 <?php
 echo '<pre>';
-var_dump($object->getData());
-var_dump($objectArray->getData());
-var_dump($objectJson->getData());
-var_dump($objectSerialized->getData());
-var_dump($objectStd->getData());
-var_dump($objectSimpleXml->getData());
-var_dump($objectXml->getData());
+var_dump($object->get());
+var_dump($objectArray->get());
+var_dump($objectJson->get());
+var_dump($objectSerialized->get());
+var_dump($objectStd->get());
+var_dump($objectSimpleXml->get());
+var_dump($objectXml->get());
 echo '</pre>';

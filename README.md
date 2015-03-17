@@ -1,6 +1,8 @@
 ClassKernel
 ============
 
+[![Build Status](https://travis-ci.org/chajr/class-kernel.svg)](https://travis-ci.org/chajr/class-kernel)
+
 Main files for all class libraries. Include classes to use BlueObject as trait and
 independent Object with xml data handling. Also allow to use Register to create
 objects and singletons. That package is base package for all Class libraries, but
@@ -57,3 +59,7 @@ License
 --------------
 This bundle is released under the Apache license.  
 [Apache license](https://github.com/chajr/class-kernel/LICENSE "Apache license")
+
+Travis Information
+--------------
+[Travis CI Build Info](https://travis-ci.org/chajr/class-kernel)
