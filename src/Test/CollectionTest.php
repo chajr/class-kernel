@@ -344,7 +344,7 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $collection->addElement('some new element 2');
         $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
 
-        $collection->changeElement(0, 'changed lorem ipsum');
+        $collection->changeElement(4, 'changed lorem ipsum');
         $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
 
         $collection->delete(3);
@@ -365,11 +365,16 @@ class CollectionTest extends \PHPUnit_Framework_TestCase
         $collection->addElement('some new element');
         $collection->addElement('some new element 2');
         $collection->changeElement(0, 'changed lorem ipsum');
+        $collection->delete(3);
+        $collection->delete(2);
 
         $this->assertEquals($originalCollection->getCollection(), $collection->getOriginalCollection());
 
-        $collection->restoreData();
+        $this->assertNotEquals($originalCollection->get(2), $collection->get(2));
+        $collection->restoreData(2);
+        $this->assertEquals($originalCollection->get(2), $collection->get(2));
 
+        $collection->restoreData();
         $this->assertEquals($originalCollection->getCollection(), $collection->getCollection());
     }
 
