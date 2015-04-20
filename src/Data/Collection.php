@@ -16,6 +16,7 @@ use Iterator;
 use Zend\Serializer\Serializer;
 use Zend\Serializer\Exception\ExceptionInterface;
 use Exception;
+use ClassKernel\Helper\ArrayHelper;
 
 class Collection implements Serializable, ArrayAccess, Iterator
 {
@@ -165,6 +166,13 @@ class Collection implements Serializable, ArrayAccess, Iterator
      * @var array
      */
     protected $_newKeys = [];
+
+    /**
+     * store list of removed original collection keys
+     *
+     * @var array
+     */
+    protected $_removedKeys = [];
 
     /**
      * create collection object
@@ -388,25 +396,67 @@ class Collection implements Serializable, ArrayAccess, Iterator
     /**
      * replace changed data by original data
      * set data changed to false only if restore whole data
+     * works only for original deleted data
      *
      * @param string|null $key
      * @return $this
      */
     public function restoreData($key = null)
     {
+        $restored = $this->getOriginalCollection();
+
         if (is_null($key)) {
-            $mergedData                     = array_merge($this->_COLLECTION, $this->_originalCollection);
-            $this->_COLLECTION              = $this->_removeNewKeys($mergedData);
+            $this->_COLLECTION              = $restored;
             $this->_dataChanged             = false;
             $this->_newKeys                 = [];
+            $this->_removedKeys             = [];
             $this->_originalCollectionSize  = $this->count();
         } else {
-            if (array_key_exists($key, $this->_originalCollection)) {
-                $this->_COLLECTION[$key] = $this->_originalCollection[$key];
+            if (array_key_exists($key, $restored)) {
+                $this->_restoreSingleKeyData($key);
             }
         }
 
         return $this;
+    }
+
+    /**
+     * restore data for single key
+     *
+     * @param int $key
+     */
+    protected function _restoreSingleKeyData($key)
+    {
+        $collection = [];
+        $index      = 0;
+        $size       = count($this->_COLLECTION) +1;
+
+        for ($i = 0; $i < $size; $i++) {
+            if ($i === (int)$key) {
+                $collection[$i] = $this->_originalCollection[$i];
+                unset($this->_originalCollection[$i]);
+                $index++;
+            } else {
+                $collection[$i] = $this->_COLLECTION[$i - $index];
+            }
+        }
+
+        foreach ($this->_newKeys as $newKeysIndex => $newKey) {
+            if ($newKey > $key) {
+                $this->_newKeys[$newKeysIndex] += 1;
+            }
+        }
+
+        $index = array_search($key, $this->_removedKeys);
+        unset($this->_removedKeys[$index]);
+        $this->_COLLECTION = $collection;
+
+        if (empty($this->_newKeys)
+            && empty($this->_removedKeys)
+            && empty($this->_originalCollection)
+        ) {
+            $this->_dataChanged = false;
+        }
     }
 
     /**
@@ -433,6 +483,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
         $this->_originalCollection      = [];
         $this->_dataChanged             = false;
         $this->_newKeys                 = [];
+        $this->_removedKeys             = [];
         $this->_originalCollectionSize  = $this->count();
         return $this;
     }
@@ -461,32 +512,35 @@ class Collection implements Serializable, ArrayAccess, Iterator
      *
      * @param null|string $key
      * @return mixed
-     * @todo rebuild deletion for collection
      */
     public function getOriginalCollection($key = null)
     {
         $this->_prepareData($key);
 
         $data               = $this->_removeNewKeys($this->_COLLECTION);
-        $originalCollection = [];
+        $collection         = [];
         $index              = 0;
 
         for ($i = 0; $i < $this->_originalCollectionSize; $i++) {
-            if (!array_key_exists($i, $this->_originalCollection)) {
-//                $originalCollection[$i] = $data[$i - $index];
-                $originalCollection[$i] = $data[$i];
-            } else {
-                $originalCollection[$i] = $this->_originalCollection[$i];
+            if (in_array($i, $this->_removedKeys)) {
+                $collection[$i] = null;
                 $index++;
+            } else {
+                $collection[$i] = $data[$i - $index];
             }
         }
 
+        $mergedData = ArrayHelper::arrayMerge(
+            $collection,
+            $this->_originalCollection
+        );
+
         if (!$key) {
-            return $originalCollection;
+            return $mergedData;
         }
 
-        if (array_key_exists($key, $originalCollection)) {
-            return $originalCollection[$key];
+        if (array_key_exists($key, $mergedData)) {
+            return $mergedData[$key];
         }
 
         return null;
@@ -517,6 +571,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
             unset($this->_newKeys[$key]);
             $this->_recalculateCollectionNewIndexes();
         } else {
+            $this->_removedKeys[] = $index;
             array_walk($this->_newKeys, function(&$index) {
                 $index -= 1;
             });
@@ -615,10 +670,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
     protected function _prepareData($data)
     {
         if ($this->_preparationOn) {
-            $data = $this->_dataPreparation(
-                $data,
-                $this->_dataPreparationCallbacks
-            );
+            $data = $this->_dataPreparation($data);
         }
 
         return $data;
@@ -1002,8 +1054,7 @@ class Collection implements Serializable, ArrayAccess, Iterator
             return $this;
         }
 
-        $this->_moveToOriginalCollection($index)
-            ->_deleteNewKey($index);
+        $this->_moveToOriginalCollection($index)->_deleteNewKey($index);
         unset($this->_COLLECTION[$index]);
         $this->_recalculateCollectionIndexes();
         $this->_dataChanged = true;
@@ -1094,7 +1145,11 @@ class Collection implements Serializable, ArrayAccess, Iterator
                 unset($indexesToUpdate[$counter]);
             }
         } else {
-            $this->addElement($value, $offset);
+            if ($this->hasElement($offset)) {
+                $this->changeElement($offset, $value);
+            } else {
+                $this->addElement($value);
+            }
         }
 
         return $this;
