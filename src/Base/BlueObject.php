@@ -20,19 +20,20 @@ use Zend\Serializer\Exception\ExceptionInterface;
 use Exception;
 use Closure;
 use ReflectionFunction;
+use Zend\Di\Di;
 
 trait BlueObject
 {
     /**
      * text value for skipped object
-     * 
+     *
      * @var string
      */
     protected $_skippedObject = ': {;skipped_object;}';
 
     /**
      * contains name of undefined data
-     * 
+     *
      * @var string
      */
     protected $_defaultDataName = 'default';
@@ -93,6 +94,38 @@ trait BlueObject
         'preparation'           => [],
         'integer_key_prefix'    => 'integer_key_',
         'ini_section'           => false,
+        'dependencies'          => [
+            'array_access'  => ['ClassKernel\Base\Object\ArrayAccess', []],
+            'call'          => ['ClassKernel\Base\Object\Call', []],
+            'error'         => ['ClassKernel\Base\Object\Error', []],
+            'export'        => ['ClassKernel\Base\Object\Export', []],
+            'import'        => ['ClassKernel\Base\Object\Import', []],
+            'magic'         => ['ClassKernel\Base\Object\Magic', []],
+            'original'      => ['ClassKernel\Base\Object\Original', []],
+            'preparation'   => ['ClassKernel\Base\Object\Preparation', []],
+            'validation'    => ['ClassKernel\Base\Object\Validation', []],
+            'xml'           => ['ClassKernel\Base\Object\Xml', []],
+            'std'           => ['ClassKernel\Base\Object\Std', []],
+        ]
+    ];
+
+    /**
+     * list of dependent object interfaces
+     *
+     * @var array
+     */
+    protected $_dependencyInterfaces = [
+        'array_access'  => 'ClassKernel\Base\Object\Interfaces\ArrayAccess',
+        'call'          => 'ClassKernel\Base\Object\Interfaces\Call',
+        'error'         => 'ClassKernel\Base\Object\Interfaces\Error',
+        'export'        => 'ClassKernel\Base\Object\Interfaces\Export',
+        'import'        => 'ClassKernel\Base\Object\Interfaces\Import',
+        'magic'         => 'ClassKernel\Base\Object\Interfaces\Magic',
+        'original'      => 'ClassKernel\Base\Object\Interfaces\Original',
+        'preparation'   => 'ClassKernel\Base\Object\Interfaces\Preparation',
+        'validation'    => 'ClassKernel\Base\Object\Interfaces\Validation',
+        'xml'           => 'ClassKernel\Base\Object\Interfaces\Xml',
+        'std'           => 'ClassKernel\Base\Object\Interfaces\Std',
     ];
 
     /**
@@ -105,7 +138,7 @@ trait BlueObject
 
     /**
      * separator for data to return as string
-     * 
+     *
      * @var string
      */
     protected $_separator = ', ';
@@ -113,21 +146,21 @@ trait BlueObject
     /**
      * store list of rules to validate data
      * keys are searched using regular expression
-     * 
+     *
      * @var array
      */
     protected $_validationRules = [];
 
     /**
      * list of callbacks to prepare data before insert into object
-     * 
+     *
      * @var array
      */
     protected $_dataPreparationCallbacks = [];
 
     /**
      * list of callbacks to prepare data before return from object
-     * 
+     *
      * @var array
      */
     protected $_dataRetrieveCallbacks = [];
@@ -135,73 +168,80 @@ trait BlueObject
     /**
      * for array access numeric keys, store last used numeric index
      * used only in case when object is used as array
-     * 
+     *
      * @var int
      */
     protected $_integerKeysCounter = 0;
 
     /**
      * allow to turn off/on data validation
-     * 
+     *
      * @var bool
      */
     protected $_validationOn = true;
 
     /**
      * allow to turn off/on data preparation
-     * 
+     *
      * @var bool
      */
     protected $_preparationOn = true;
 
     /**
      * allow to turn off/on data retrieve
-     * 
+     *
      * @var bool
      */
     protected $_retrieveOn = true;
 
     /**
      * inform append* methods that data was set in object creation
-     * 
+     *
      * @var bool
      */
     protected $_objectCreation = true;
 
     /**
      * csv variable delimiter
-     * 
+     *
      * @var string
      */
     protected $_csvDelimiter = ';';
 
     /**
      * csv enclosure
-     * 
+     *
      * @var string
      */
     protected $_csvEnclosure = '"';
 
     /**
      * csv escape character
-     * 
+     *
      * @var string
      */
     protected $_csvEscape = '\\';
 
     /**
      * csv line delimiter (single object element)
-     * 
+     *
      * @var string
      */
     protected $_csvLineDelimiter = "\n";
 
     /**
      * allow to process [section] as array key
-     * 
+     *
      * @var bool
      */
     protected $_processIniSection;
+
+    /**
+     * contains all object for dependency injection
+     *
+     * @var array
+     */
+    protected $_dependentObjects = [];
 
     /**
      * create new Blue Object, optionally with some data
@@ -261,6 +301,56 @@ trait BlueObject
 
         $this->afterInitializeObject();
         $this->_objectCreation = false;
+    }
+
+    /**
+     * allow to call object with create new instance if is required
+     *
+     * @param string $dependency
+     * @return mixed|false
+     */
+    protected function _getDependency($dependency)
+    {
+        if (!array_key_exists($dependency, $this->_dependentObjects)) {
+            $object = $this->_options['dependencies'][$dependency][0];
+
+            try {
+                switch (true) {
+                    case is_string($object):
+                        $di = new Di;
+                        $di->instanceManager()->setParameters(
+                            $object,
+                            $this->_options['dependencies'][$dependency][1]
+                        );
+
+                        $object = $di->get($object);
+                        break;
+
+                    case is_object($object):
+                        break;
+
+                    default:
+                        throw new \LogicException('Unknown dependency type.');
+                        break;
+                }
+
+                $instance = $this->_dependencyInterfaces[$dependency];
+                if (!$object instanceof $instance) {
+                    throw new \LogicException(
+                        'Invalid interface for dependency. Should be: ' . $instance
+                    );
+                }
+
+                $this->_dependentObjects[$dependency] = $object;
+            } catch (Exception $e) {
+                $this->_hasErrors = true;
+                $this->_addException($e);
+
+                return false;
+            }
+        }
+
+        return $this->_dependentObjects[$dependency];
     }
 
     /**
@@ -367,7 +457,7 @@ trait BlueObject
 
     /**
      * compare given data with possibility to use callable functions to check data
-     * 
+     *
      * @param mixed $dataToCheck
      * @param string $key
      * @param mixed $originalData
@@ -460,7 +550,7 @@ trait BlueObject
 
     /**
      * allow to set data from serialized string with keep original data
-     * 
+     *
      * @param string $string
      * @return $this
      */
@@ -484,7 +574,7 @@ trait BlueObject
     /**
      * return data for given key if exist in object
      * or null if key was not found
-     * 
+     *
      * @param string|null $key
      * @return mixed
      */
@@ -522,7 +612,7 @@ trait BlueObject
     /**
      * set some data in object
      * can give pair key=>value or array of keys
-     * 
+     *
      * @param string|array $key
      * @param mixed $data
      * @return $this
@@ -578,7 +668,7 @@ trait BlueObject
 
     /**
      * check if data with given key exist in object, or object has some data
-     * 
+     *
      * @param string $key
      * @return bool
      */
@@ -639,7 +729,7 @@ trait BlueObject
 
     /**
      * allow to compare data with given operator
-     * 
+     *
      * @param mixed $dataOrigin
      * @param mixed $dataCheck
      * @param string $operator
@@ -707,7 +797,7 @@ trait BlueObject
     /**
      * destroy key entry in object data, or whole keys
      * automatically set data to original array
-     * 
+     *
      * @param string|null $key
      * @return $this
      */
@@ -748,7 +838,7 @@ trait BlueObject
 
     /**
      * set object key data to null
-     * 
+     *
      * @param string $key
      * @return $this
      */
@@ -826,7 +916,7 @@ trait BlueObject
 
     /**
      * return current separator
-     * 
+     *
      * @return string
      */
     public function returnSeparator()
@@ -836,7 +926,7 @@ trait BlueObject
 
     /**
      * allow to change default separator
-     * 
+     *
      * @param string $separator
      * @return Object
      */
@@ -893,7 +983,7 @@ trait BlueObject
 
     /**
      * return object as stdClass
-     * 
+     *
      * @return stdClass
      */
     public function toStdClass()
@@ -966,7 +1056,7 @@ trait BlueObject
             $isRecursive = is_array($value) && $recursive;
 
             if ($isRecursive) {
-                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value, true);
+                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value);
             } else {
                 $data[$key] = $this->_callUserFunction($function, $key, $value, $methodAttributes);
             }
@@ -1048,7 +1138,7 @@ trait BlueObject
 
     /**
      * clear some data after creating new object with data
-     * 
+     *
      * @return $this
      */
     protected function _afterAppendDataToNewObject()
@@ -1208,7 +1298,7 @@ trait BlueObject
 
     /**
      * return set up integer key prefix value
-     * 
+     *
      * @return string
      */
     public function returnIntegerKeyPrefix()
@@ -1217,7 +1307,7 @@ trait BlueObject
     }
 
     /**
-     * allow to set array in object or some other value 
+     * allow to set array in object or some other value
      *
      * @param array $arrayData
      * @return $this
@@ -1299,7 +1389,7 @@ trait BlueObject
 
     /**
      * allow to set ini data into object
-     * 
+     *
      * @param string $data
      * @return $this
      */
@@ -1319,7 +1409,7 @@ trait BlueObject
 
     /**
      * return information about ini section processing
-     * 
+     *
      * @return bool
      */
     public function returnProcessIniSection()
@@ -1329,7 +1419,7 @@ trait BlueObject
 
     /**
      * enable or disable ini section processing
-     * 
+     *
      * @param bool $bool
      * @return $this
      */
@@ -1341,7 +1431,7 @@ trait BlueObject
 
     /**
      * export object as ini string
-     * 
+     *
      * @return string
      */
     public function toIni()
@@ -1357,7 +1447,7 @@ trait BlueObject
 
     /**
      * append ini data to string
-     * 
+     *
      * @param string $ini
      * @param string $key
      * @param mixed $iniRow
@@ -1376,7 +1466,7 @@ trait BlueObject
 
     /**
      * allow to set csv data into object
-     * 
+     *
      * @param string $data
      * @return $this
      */
@@ -1439,7 +1529,7 @@ trait BlueObject
 
     /**
      * change delimiter for csv row data (give only one character)
-     * 
+     *
      * @param string $char
      * @return $this
      */
@@ -1451,7 +1541,7 @@ trait BlueObject
 
     /**
      * change enclosure for csv row data (give only one character)
-     * 
+     *
      * @param string $char
      * @return $this
      */
@@ -1487,7 +1577,7 @@ trait BlueObject
 
     /**
      * export object as csv data
-     * 
+     *
      * @return string
      */
     public function toCsv()
@@ -1543,7 +1633,7 @@ trait BlueObject
      * insert single key=>value pair into object, with key conversion
      * and set _dataChanged to true
      * also set original data for given key in $this->_originalDATA
-     * 
+     *
      * @param string $key
      * @param mixed $data
      * @param bool $hasData
@@ -1568,7 +1658,7 @@ trait BlueObject
 
     /**
      * search validation rule for given key and check data
-     * 
+     *
      * @param string $key
      * @param mixed $data
      * @return bool
@@ -1598,7 +1688,7 @@ trait BlueObject
     /**
      * check data with given rule and set error information
      * allow to use method or function (must return true or false)
-     * 
+     *
      * @param string|array|string|\Closure $rule
      * @param string $key
      * @param mixed $data
@@ -1606,8 +1696,7 @@ trait BlueObject
      */
     protected function _validateData($rule, $key, $data)
     {
-        if (
-            (is_callable($rule) && call_user_func_array($rule, [$key, $data, $this]))
+        if ((is_callable($rule) && call_user_func_array($rule, [$key, $data, $this]))
             || @preg_match($rule, $data)
         ) {
             return true;
@@ -1813,7 +1902,7 @@ trait BlueObject
 
     /**
      * set regular expression for key find and validate data
-     * 
+     *
      * @param string $ruleKey
      * @param string $ruleValue
      * @return $this
@@ -1825,7 +1914,7 @@ trait BlueObject
 
     /**
      * remove validation rule from list
-     * 
+     *
      * @param string|null $key
      * @return $this
      */
@@ -1836,7 +1925,7 @@ trait BlueObject
 
     /**
      * return validation rule or all rules set in object
-     * 
+     *
      * @param null|string $rule
      * @return mixed
      */
@@ -1847,7 +1936,7 @@ trait BlueObject
 
     /**
      * common put data method for class data lists
-     * 
+     *
      * @param string|array $key
      * @param mixed $value
      * @param string $type
@@ -1872,7 +1961,7 @@ trait BlueObject
 
     /**
      * common destroy data method for class data lists
-     * 
+     *
      * @param string $key
      * @param string $type
      * @return $this
@@ -1895,7 +1984,7 @@ trait BlueObject
 
     /**
      * common return data method for class data lists
-     * 
+     *
      * @param string $key
      * @param string $type
      * @return mixed|null
@@ -1922,7 +2011,7 @@ trait BlueObject
 
     /**
      * return name of data list variable for given data type
-     * 
+     *
      * @param string $type
      * @return null|string
      */
@@ -1963,7 +2052,6 @@ trait BlueObject
     protected function _dataPreparation($key, $data, array $rulesList)
     {
         foreach ($rulesList as $ruleKey => $function) {
-
             switch (true) {
                 case is_null($key):
                     $data = $this->_prepareWholeData($ruleKey, $data, $function);
@@ -2002,7 +2090,7 @@ trait BlueObject
 
     /**
      * set regular expression for key find and validate data
-     * 
+     *
      * @param string $ruleKey
      * @param callable $ruleValue
      * @return $this
@@ -2014,7 +2102,7 @@ trait BlueObject
 
     /**
      * remove validation rule from list
-     * 
+     *
      * @param string|null $key
      * @return $this
      */
@@ -2025,7 +2113,7 @@ trait BlueObject
 
     /**
      * return validation rule or all rules set in object
-     * 
+     *
      * @param null|string $rule
      * @return mixed
      */
@@ -2036,7 +2124,7 @@ trait BlueObject
 
     /**
      * set regular expression for key find and validate data
-     * 
+     *
      * @param string $ruleKey
      * @param callable $ruleValue
      * @return $this
@@ -2048,7 +2136,7 @@ trait BlueObject
 
     /**
      * remove validation rule from list
-     * 
+     *
      * @param string|null $key
      * @return $this
      */
@@ -2059,7 +2147,7 @@ trait BlueObject
 
     /**
      * return validation rule or all rules set in object
-     * 
+     *
      * @param null|string $rule
      * @return mixed
      */
@@ -2070,7 +2158,7 @@ trait BlueObject
 
     /**
      * check that data for given key exists
-     * 
+     *
      * @param string $offset
      * @return bool
      */
@@ -2081,7 +2169,7 @@ trait BlueObject
 
     /**
      * return data for given key
-     * 
+     *
      * @param string $offset
      * @return mixed
      */
@@ -2092,7 +2180,7 @@ trait BlueObject
 
     /**
      * set data for given key
-     * 
+     *
      * @param string|null $offset
      * @param mixed $value
      * @return $this
@@ -2109,7 +2197,7 @@ trait BlueObject
 
     /**
      * remove data for given key
-     * 
+     *
      * @param string $offset
      * @return $this
      */
@@ -2122,7 +2210,7 @@ trait BlueObject
     /**
      * return the current element in an array
      * handle data preparation
-     * 
+     *
      * @return mixed
      */
     public function current()
@@ -2133,7 +2221,7 @@ trait BlueObject
 
     /**
      * return the current element in an array
-     * 
+     *
      * @return mixed
      */
     public function key()
@@ -2144,7 +2232,7 @@ trait BlueObject
     /**
      * advance the internal array pointer of an array
      * handle data preparation
-     * 
+     *
      * @return mixed
      */
     public function next()
@@ -2155,7 +2243,7 @@ trait BlueObject
 
     /**
      * rewind the position of a file pointer
-     * 
+     *
      * @return mixed
      */
     public function rewind()
@@ -2165,7 +2253,7 @@ trait BlueObject
 
     /**
      * checks if current position is valid
-     * 
+     *
      * @return bool
      */
     public function valid()
@@ -2175,7 +2263,7 @@ trait BlueObject
 
     /**
      * allow to stop data validation
-     * 
+     *
      * @return $this
      */
     public function stopValidation()
@@ -2186,7 +2274,7 @@ trait BlueObject
 
     /**
      * allow to start data validation
-     * 
+     *
      * @return $this
      */
     public function startValidation()
@@ -2197,7 +2285,7 @@ trait BlueObject
 
     /**
      * allow to stop data preparation before add tro object
-     * 
+     *
      * @return $this
      */
     public function stopOutputPreparation()
@@ -2208,7 +2296,7 @@ trait BlueObject
 
     /**
      * allow to start data preparation before add tro object
-     * 
+     *
      * @return $this
      */
     public function startOutputPreparation()
@@ -2219,7 +2307,7 @@ trait BlueObject
 
     /**
      * allow to stop data preparation before return them from object
-     * 
+     *
      * @return $this
      */
     public function stopInputPreparation()
@@ -2230,7 +2318,7 @@ trait BlueObject
 
     /**
      * allow to start data preparation before return them from object
-     * 
+     *
      * @return $this
      */
     public function startInputPreparation()
@@ -2241,7 +2329,7 @@ trait BlueObject
 
     /**
      * create exception message and set it in object
-     * 
+     *
      * @param Exception $exception
      * @return $this
      */
@@ -2281,7 +2369,7 @@ trait BlueObject
     /**
      * can be overwritten by children objects to make some special process on
      * data before return
-     * 
+     *
      * @param string|null $key
      */
     protected function _prepareData($key = null)
