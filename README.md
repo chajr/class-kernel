@@ -5,6 +5,7 @@ ClassKernel
 [![Latest Stable Version](https://poser.pugx.org/chajr/class-kernel/v/stable.svg)](https://packagist.org/packages/chajr/class-kernel)
 [![Total Downloads](https://poser.pugx.org/chajr/class-kernel/downloads.svg)](https://packagist.org/packages/chajr/class-kernel)
 [![License](https://poser.pugx.org/chajr/class-kernel/license.svg)](https://packagist.org/packages/chajr/class-kernel)
+[![Documentation Status](https://readthedocs.org/projects/class-kernel/badge/?version=latest)](https://readthedocs.org/projects/class-kernel/?badge=latest)
 
 Main files for all class libraries. Include classes to use BlueObject as trait and
 independent Object with xml data handling. Also allow to use Register to create
