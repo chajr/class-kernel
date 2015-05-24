@@ -17,10 +17,8 @@ use DOMException;
 use DOMElement;
 use Zend\Serializer\Serializer;
 use Zend\Serializer\Exception\ExceptionInterface;
-use Exception;
 use Closure;
 use ReflectionFunction;
-use Zend\Di\Di;
 
 trait BlueObject
 {
@@ -37,22 +35,6 @@ trait BlueObject
      * @var string
      */
     protected $_defaultDataName = 'default';
-
-    /**
-     * if there was some errors in object, that variable will be set on true
-     *
-     * @var bool
-     */
-    protected $_hasErrors = false;
-
-    /**
-     * will contain list of all errors that was occurred in object
-     *
-     * 0 => ['error_key' => 'error information']
-     *
-     * @var array
-     */
-    protected $_errorsList = [];
 
     /**
      * array with main object data
@@ -83,33 +65,6 @@ trait BlueObject
     protected $_dataChanged = false;
 
     /**
-     * default constructor options
-     *
-     * @var array
-     */
-    protected $_options = [
-        'data'                  => null,
-        'type'                  => null,
-        'validation'            => [],
-        'preparation'           => [],
-        'integer_key_prefix'    => 'integer_key_',
-        'ini_section'           => false,
-        'dependencies'          => [
-            'array_access'  => ['ClassKernel\Base\Object\ArrayAccess', []],
-            'call'          => ['ClassKernel\Base\Object\Call', []],
-            'error'         => ['ClassKernel\Base\Object\Error', []],
-            'export'        => ['ClassKernel\Base\Object\Export', []],
-            'import'        => ['ClassKernel\Base\Object\Import', []],
-            'magic'         => ['ClassKernel\Base\Object\Magic', []],
-            'original'      => ['ClassKernel\Base\Object\Original', []],
-            'preparation'   => ['ClassKernel\Base\Object\Preparation', []],
-            'validation'    => ['ClassKernel\Base\Object\Validation', []],
-            'xml'           => ['ClassKernel\Base\Object\Xml', []],
-            'std'           => ['ClassKernel\Base\Object\Std', []],
-        ]
-    ];
-
-    /**
      * list of dependent object interfaces
      *
      * @var array
@@ -121,6 +76,7 @@ trait BlueObject
         'export'        => 'ClassKernel\Base\Object\Interfaces\Export',
         'import'        => 'ClassKernel\Base\Object\Interfaces\Import',
         'magic'         => 'ClassKernel\Base\Object\Interfaces\Magic',
+        'mediator'      => 'ClassKernel\Base\Object\Interfaces\Mediator',
         'original'      => 'ClassKernel\Base\Object\Interfaces\Original',
         'preparation'   => 'ClassKernel\Base\Object\Interfaces\Preparation',
         'validation'    => 'ClassKernel\Base\Object\Interfaces\Validation',
@@ -237,11 +193,11 @@ trait BlueObject
     protected $_processIniSection;
 
     /**
-     * contains all object for dependency injection
+     * contains mediator object instance
      *
-     * @var array
+     * @var \ClassKernel\Base\Object\Interfaces\Mediator
      */
-    protected $_dependentObjects = [];
+    protected $_mediator;
 
     /**
      * create new Blue Object, optionally with some data
@@ -249,50 +205,50 @@ trait BlueObject
      * like: json, xml, serialized or stdClass default is array
      *
      * @param array|null $options
+     * @todo convert to strategy
      */
     public function __construct($options = [])
     {
-        $this->_options             = array_merge($this->_options, $options);
-        $data                       = $this->_options['data'];
-        $this->_integerKeyPrefix    = $this->_options['integer_key_prefix'];
-        $this->_processIniSection   = $this->_options['ini_section'];
+        $this->_setMediator($options);
 
-        $this->_beforeInitializeObject($data);
-        $this->putValidationRule($this->_options['validation'])
-            ->putPreparationCallback($this->_options['preparation'])
-            ->initializeObject($data);
+        $this->_beforeInitializeObject();
+        $this->putValidationRule($this->_mediator->getOption('validation'))
+            ->putPreparationCallback($this->_mediator->getOption('preparation'))
+            ->initializeObject();
+
+        $type = $this->_mediator->getOption('type');
 
         switch (true) {
-            case $this->_options['type'] === 'json':
-                $this->appendJson($data);
+            case $type === 'json':
+                $this->appendJson($this->_mediator->getData());
                 break;
 
-            case $this->_options['type'] === 'xml':
-                $this->appendXml($data);
+            case $type === 'xml':
+                $this->appendXml($this->_mediator->getData());
                 break;
 
-            case $this->_options['type'] === 'simple_xml':
-                $this->appendSimpleXml($data);
+            case $type === 'simple_xml':
+                $this->appendSimpleXml($this->_mediator->getData());
                 break;
 
-            case $this->_options['type'] === 'serialized':
-                $this->appendSerialized($data);
+            case $type === 'serialized':
+                $this->appendSerialized($this->_mediator->getData());
                 break;
 
-            case $this->_options['type'] === 'csv':
-                $this->appendCsv($data);
+            case $type === 'csv':
+                $this->appendCsv($this->_mediator->getData());
                 break;
 
-            case $this->_options['type'] === 'ini':
-                $this->appendIni($data);
+            case $type === 'ini':
+                $this->appendIni($this->_mediator->getData());
                 break;
 
-            case $data instanceof stdClass:
-                $this->appendStdClass($data);
+            case $this->_mediator->getData() instanceof stdClass:
+                $this->appendStdClass($this->_mediator->getData());
                 break;
 
-            case is_array($data):
-                $this->appendArray($data);
+            case is_array($this->_mediator->getData()):
+                $this->appendArray($this->_mediator->getData());
                 break;
 
             default:
@@ -304,53 +260,28 @@ trait BlueObject
     }
 
     /**
-     * allow to call object with create new instance if is required
+     * set mediator object
      *
-     * @param string $dependency
-     * @return mixed|false
+     * @param array $options
+     * @return $this
      */
-    protected function _getDependency($dependency)
+    protected function _setMediator(array $options)
     {
-        if (!array_key_exists($dependency, $this->_dependentObjects)) {
-            $object = $this->_options['dependencies'][$dependency][0];
+        $mediatorInstance = $this->_dependencyInterfaces['mediator'];
 
-            try {
-                switch (true) {
-                    case is_string($object):
-                        $di = new Di;
-                        $di->instanceManager()->setParameters(
-                            $object,
-                            $this->_options['dependencies'][$dependency][1]
-                        );
-
-                        $object = $di->get($object);
-                        break;
-
-                    case is_object($object):
-                        break;
-
-                    default:
-                        throw new \LogicException('Unknown dependency type.');
-                        break;
-                }
-
-                $instance = $this->_dependencyInterfaces[$dependency];
-                if (!$object instanceof $instance) {
-                    throw new \LogicException(
-                        'Invalid interface for dependency. Should be: ' . $instance
-                    );
-                }
-
-                $this->_dependentObjects[$dependency] = $object;
-            } catch (Exception $e) {
-                $this->_hasErrors = true;
-                $this->_addException($e);
-
-                return false;
-            }
+        if (array_key_exists('mediator', $options) && $options['mediator'] instanceof $mediatorInstance) {
+            $this->_mediator = $options['mediator'];
+            unset($options['mediator']);
+        } else {
+            $this->_mediator = Register::getObject(
+                'ClassKernel\Base\Object\Mediator',
+                [$options, $this->_dependencyInterfaces]
+            );
         }
 
-        return $this->_dependentObjects[$dependency];
+        $this->_mediator->setBlueObject($this);
+
+        return $this;
     }
 
     /**
@@ -2164,7 +2095,9 @@ trait BlueObject
      */
     public function offsetExists($offset)
     {
-        return $this->has($offset);
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        return $arrayAccess->offsetExists($offset);
     }
 
     /**
@@ -2175,7 +2108,9 @@ trait BlueObject
      */
     public function offsetGet($offset)
     {
-        return $this->toArray($offset);
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        return $arrayAccess->offsetGet($offset);
     }
 
     /**
@@ -2187,11 +2122,10 @@ trait BlueObject
      */
     public function offsetSet($offset, $value)
     {
-        if (is_null($offset)) {
-            $offset = $this->_integerToStringKey($this->_integerKeysCounter++);
-        }
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        $arrayAccess->offsetSet($offset, $value);
 
-        $this->_putData($offset, $value);
         return $this;
     }
 
@@ -2203,7 +2137,10 @@ trait BlueObject
      */
     public function offsetUnset($offset)
     {
-        $this->destroy($offset);
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        $arrayAccess->offsetUnset($offset);
+
         return $this;
     }
 
@@ -2215,8 +2152,9 @@ trait BlueObject
      */
     public function current()
     {
-        current($this->_DATA);
-        return $this->toArray($this->key());
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        return $arrayAccess->current();
     }
 
     /**
@@ -2226,7 +2164,9 @@ trait BlueObject
      */
     public function key()
     {
-        return key($this->_DATA);
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        return $arrayAccess->key();
     }
 
     /**
@@ -2237,8 +2177,9 @@ trait BlueObject
      */
     public function next()
     {
-        next($this->_DATA);
-        return $this->toArray($this->key());
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        $arrayAccess->next();
     }
 
     /**
@@ -2248,7 +2189,9 @@ trait BlueObject
      */
     public function rewind()
     {
-        return reset($this->_DATA);
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        $arrayAccess->rewind();
     }
 
     /**
@@ -2258,7 +2201,9 @@ trait BlueObject
      */
     public function valid()
     {
-        return key($this->_DATA) !== null;
+        /** @var \ClassKernel\Base\Object\Interfaces\ArrayAccess $arrayAccess */
+        $arrayAccess = $this->_mediator->getDependency('array_access');
+        $arrayAccess->valid();
     }
 
     /**
@@ -2328,31 +2273,10 @@ trait BlueObject
     }
 
     /**
-     * create exception message and set it in object
-     *
-     * @param Exception $exception
-     * @return $this
-     */
-    protected function _addException(Exception $exception)
-    {
-        $this->_hasErrors = true;
-        $this->_errorsList[$exception->getCode()] = [
-            'message'   => $exception->getMessage(),
-            'line'      => $exception->getLine(),
-            'file'      => $exception->getFile(),
-            'trace'     => $exception->getTraceAsString(),
-        ];
-
-        return $this;
-    }
-
-    /**
      * can be overwritten by children objects to start with some special operations
      * as parameter take data given to object by reference
-     *
-     * @param mixed $data
      */
-    public function initializeObject(&$data)
+    public function initializeObject()
     {
         
     }
@@ -2380,10 +2304,8 @@ trait BlueObject
     /**
      * can be overwritten by children objects to start with some special operations
      * as parameter take data given to object by reference
-     *
-     * @param mixed $data
      */
-    protected function _beforeInitializeObject($data)
+    protected function _beforeInitializeObject()
     {
 
     }
