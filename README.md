@@ -17,6 +17,7 @@ Its recommended to use packages `ClassEvents` and optionally `ClassBenchmark`.
 ### Included libraries
 * **ClassKernel\Base\BlueObject** - trait class to store data as object
 * **ClassKernel\Data\Object** - include BlueObject trait for create object
+* **ClassKernel\Base\Collection** - allow to manage data collection
 * **ClassKernel\Data\Xml** - extends DOMDocument to handle xml data
 * **ClassKernel\Base\Register** - allow to create objects and singletons
 
@@ -25,6 +26,7 @@ Documentation
 * [ClassKernel\Base\BlueObject](https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_BlueObject "BlueObject and Object")
 * [ClassKernel\Base\Register](https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_Register "Register")
 * [ClassKernel\Data\Xml](https://github.com/chajr/class-kernel/wiki/ClassKernel_Data_Xml "Xml")
+* [ClassKernel\Data\Collection](https://github.com/chajr/class-kernel/wiki/ClassKernel_Data_Collection "Collection")
 * [Events](https://github.com/chajr/class-kernel/wiki/Events "Events")
 
 Install via Composer
