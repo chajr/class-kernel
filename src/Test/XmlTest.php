@@ -63,7 +63,7 @@ class XmlTest extends \PHPUnit_Framework_TestCase
      */
     public function testFileLoading()
     {
-        $testFile = 'examples/xml/source.xml';
+        $testFile = 'src/Test/data/source.xml';
         $this->assertFileExists($testFile, 'test file don\'t exists');
 
         $xml = new Xml;
