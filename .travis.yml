@@ -8,7 +8,9 @@ php:
 matrix:
   fast_finish: true
   allow_failures:
-    - php: "7.0"
+    - php:
+      - "7.0"
+      - "hhvm"
 install:
   - composer install
 script:
