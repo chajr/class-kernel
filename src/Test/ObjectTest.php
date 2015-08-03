@@ -1050,6 +1050,35 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testCreationWithCsvData($first, $second)
     {
+        $csv = $this->_exampleCsvData($first, $second);
+        $csv = str_replace(',', ';', $csv);
+
+        $object = new Object([
+            'type'  => 'csv',
+            'data'  => $csv,
+        ]);
+
+        $this->assertEquals($this->_convertType($first), $object->getIntegerKey0()[0]);
+
+        if (count($second) > 1) {
+            $this->assertEquals($second, $object->getIntegerKey1());
+        } else {
+            $this->assertEquals($this->_convertType($second), $object->getIntegerKey1()[0]);
+        }
+    }
+
+    /**
+     * allow to create object with given csv string
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testChangeCsvDelimiter($first, $second)
+    {
         $object = new Object();
         $csv    = $this->_exampleCsvData($first, $second);
 
@@ -1096,10 +1125,11 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testCreationWithIniData($first, $second)
     {
-        $object = new Object();
-        $ini    = $this->_exampleIniData($first, $second);
+        $object = new Object([
+            'type'  => 'ini',
+            'data'  => $this->_exampleIniData($first, $second),
+        ]);
 
-        $object->appendIni($ini);
         $this->assertEquals($this->_convertType($first), $object->getDataFirst());
         $this->assertEquals($this->_convertType($second), $object->getDataSecond());
 
@@ -1147,6 +1177,56 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             rtrim($this->_exampleIniData($first, $second, true)),
             rtrim($ini)
         );
+    }
+
+    /**
+     * manual test for isset
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testIsSetData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertTrue($object->__isset('data_first'));
+        $this->assertFalse($object->__isset('data_not_exist'));
+    }
+
+    /**
+     * manual test for unset
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testUnsetData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertTrue($object->__isset('data_first'));
+        $object->__unset('data_first');
+        $this->assertFalse($object->__isset('data_first'));
+    }
+
+    /**
+     * test object serialization with exception
+     */
+    public function testSerializeWithException()
+    {
+        $instance = new Object;
+        $instance->set('object', new \ClassKernel\Test\SerializeFail);
+        $instance->serialize();
+
+        $this->assertTrue($instance->checkErrors());
+        $this->assertEquals($instance->returnObjectError()[0]['message'], 'test exception');
     }
 
     /**
