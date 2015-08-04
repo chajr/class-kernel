@@ -681,10 +681,6 @@ trait BlueObject
                 return $dataOrigin >= $dataCheck;
             // no break, always will return boolean value
 
-            case 'instance':
-                return $dataOrigin instanceof $dataCheck;
-            // no break, always will return boolean value
-
             default:
                 return null;
             // no break, always will return boolean value

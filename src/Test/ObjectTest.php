@@ -961,6 +961,44 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             return false;
         });
         $this->assertTrue($bool);
+
+        $bool = $object->compareData('5', 'none_existing_key', '===', true);
+        $this->assertFalse($bool);
+    }
+
+    /**
+     * test other compare operators
+     */
+    public function testCompareOperators()
+    {
+        $object = new Object([
+            'data' => [
+                'first'     => 5,
+                'second'    => true,
+                'object'    => new Object,
+            ]
+        ]);
+
+        $bool = $object->compareData(false, 'second', '!=');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData(false, 'second', '<>');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData(6, 'first', '>');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData(4, 'first', '<');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData(4, 'first', '<=');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData(6, 'first', '>=');
+        $this->assertTrue($bool);
+
+        $bool = $object->compareData('', 'first', 'unknown');
+        $this->assertNull($bool);
     }
 
     /**
@@ -1227,6 +1265,99 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($instance->checkErrors());
         $this->assertEquals($instance->returnObjectError()[0]['message'], 'test exception');
+    }
+
+    /**
+     * test deprecated getData
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testGetData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertEquals(
+            $this->_getSimpleData($first, $second),
+            $object->getData()
+        );
+    }
+
+    /**
+     * test deprecated hasData and unsetData
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testHasData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertTrue($object->hasData('data_first'));
+        $object->unsetData('data_first');
+        $this->assertFalse($object->hasData('data_first'));
+        $this->assertFalse($object->hasData('some_key'));
+    }
+
+    /**
+     * check that get will return null for none existing key
+     */
+    public function testGetDataForNoneExistingKey()
+    {
+        $object = new Object;
+        $this->assertNull($object->get('some_key'));
+    }
+
+    /**
+     * test deprecated restoreData
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testRestoreData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+
+        $this->assertEquals($second, $object->get('data_second'));
+
+        $object->destroy('data_second');
+
+        $this->assertNull($object->get('data_second'));
+
+        $object->restoreData('data_second');
+
+        $this->assertEquals($second, $object->get('data_second'));
+    }
+
+    /**
+     * test deprecated clearData
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testClearData($first, $second)
+    {
+        $object = $this->_simpleObject($first, $second);
+        $object->clearData('data_first');
+
+        $this->assertNull($object->get('data_first'));
+        $this->assertTrue($object->has('data_first'));
     }
 
     /**
