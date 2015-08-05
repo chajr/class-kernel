@@ -962,7 +962,7 @@ trait BlueObject
             $isRecursive = is_array($value) && $recursive;
 
             if ($isRecursive) {
-                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value, true);
+                $data[$key] = $this->_recursiveTraveler($function, $methodAttributes, $value);
             } else {
                 $data[$key] = $this->_callUserFunction($function, $key, $value, $methodAttributes);
             }
@@ -1065,11 +1065,13 @@ trait BlueObject
     {
         $jsonData = json_decode($data, true);
 
-        if (is_array($jsonData)) {
-            $this->appendArray($jsonData);
-        } else {
-            $this->appendData($this->_defaultDataName, $jsonData);
+        if (is_null($jsonData)) {
+            $this->_errorsList['json_decode'] = 'Json cannot be decoded.';
+            $this->_hasErrors = true;
+            return $this;
         }
+
+        $this->appendArray($jsonData);
 
         if ($this->_objectCreation) {
             return $this->_afterAppendDataToNewObject();

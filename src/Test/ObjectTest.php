@@ -409,13 +409,18 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      *
      * @requires _simpleObject
      */
-    public function testDisplayObjectAsString()
+    public function testDisplayObjectAsStringWithSeparator()
     {
         $object = $this->_simpleObject('first data', 'second data');
         $this->assertEquals('first data, second data', (string)$object);
 
         $object->changeSeparator('; ');
         $this->assertEquals('first data; second data', (string)$object);
+
+        $string = $object->toString(': ');
+        $this->assertEquals('first data: second data', $string);
+
+        $this->assertEquals(': ', $object->returnSeparator());
     }
 
     /**
@@ -1036,8 +1041,18 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testDataTraveling($first, $second)
     {
+        if (is_array($second)) {
+            $second[1] = [
+                'special_1' => 0,
+                'special_2' => 1,
+            ];
+        }
+
         $object     = $this->_simpleObject($first, $second);
         $function   = function ($key, $val) {
+            if ($key === 0 && $val === 'bar') {
+                return $val;
+            }
             return self::IM_CHANGED;
         };
 
@@ -1046,6 +1061,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(self::IM_CHANGED, $object->getDataFirst());
         if (is_array($object->getDataSecond())) {
             $this->assertEquals(self::IM_CHANGED, $object->getDataSecond()[0]);
+            $this->assertEquals(self::IM_CHANGED, $object->getDataSecond()[1]['special_1']);
         } else {
             $this->assertEquals(self::IM_CHANGED, $object->getDataSecond());
         }
@@ -1358,6 +1374,19 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNull($object->get('data_first'));
         $this->assertTrue($object->has('data_first'));
+    }
+
+    /**
+     * test json that cannot be decoded
+     */
+    public function testAppendJsonWithError()
+    {
+        $object = new Object([
+            'type' => 'json',
+            'data' => 'json',
+        ]);
+
+        $this->assertEquals(true, $object->checkErrors());
     }
 
     /**
