@@ -1112,6 +1112,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             'data'  => $csv,
         ]);
 
+        $this->assertEquals('integer_key_', $object->returnIntegerKeyPrefix());
         $this->assertEquals($this->_convertType($first), $object->getIntegerKey0()[0]);
 
         if (count($second) > 1) {
@@ -1200,6 +1201,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
                 $object->getDataSecond()
             );
         }
+
+//        $object->appendIni($brokenIni, true);
+//        $this->assertTrue($object->checkErrors());
     }
 
     /**
@@ -1426,6 +1430,20 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(self::IM_CHANGED, $object->getDataFirst());
         $this->assertNotEquals($first, $object->getDataFirst());
+    }
+
+    /**
+     * test unserialize with string (none array or object)
+     */
+    public function testAppendSerializeForStringData()
+    {
+        $object     = new Object;
+        $string     = "Some string to \n serialize";
+        $serialized = serialize($string);
+
+        $object->appendSerialized($serialized);
+
+        $this->assertEquals($string, $object->get('default'));
     }
 
     /**
