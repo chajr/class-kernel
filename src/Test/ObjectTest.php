@@ -300,6 +300,8 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($first, $object->returnOriginalData('data_first'));
         $this->assertTrue($object->keyDataChanged('data_first'));
 
+        $this->assertNull($object->returnOriginalData('some_key'));
+
         $object->restoreDataFirst();
         $this->assertEquals($first, $object->getDataFirst());
         $this->assertTrue($object->dataChanged());
@@ -1333,6 +1335,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     public function testGetDataForNoneExistingKey()
     {
         $object = new Object;
+        $object->stopOutputPreparation();
         $this->assertNull($object->get('some_key'));
     }
 
@@ -1349,6 +1352,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     public function testRestoreData($first, $second)
     {
         $object = $this->_simpleObject($first, $second);
+        $object->set('new_data', 'a');
 
         $this->assertEquals($second, $object->get('data_second'));
 
@@ -1378,6 +1382,41 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNull($object->get('data_first'));
         $this->assertTrue($object->has('data_first'));
+    }
+
+    /**
+     * test deprecated setData
+     *
+     * @param mixed $first
+     * @param mixed $second
+     *
+     * @dataProvider baseDataProvider
+     * @requires baseDataProvider
+     * @requires _simpleObject
+     */
+    public function testSetData($first, $second)
+    {
+        $object = new Object;
+
+        $this->assertNull($object->get('data_first'));
+
+        $object->setData('data_first', $first);
+        $object->setData('data_second', $second);
+
+        $this->assertTrue($object->has('data_first'));
+        $this->assertEquals($first, $object->get('data_first'));
+    }
+
+    /**
+     * test try to execute none callable function
+     */
+    public function testReturnValueForUnCallableFunction()
+    {
+        $object = new Object;
+        $object->set('data', 'some data');
+        $object->putValidationRule('#data#', 'im not callable');
+
+        $this->assertEquals('some data', $object->get('data'));
     }
 
     /**

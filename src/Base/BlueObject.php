@@ -552,10 +552,6 @@ trait BlueObject
         $mergedData = array_merge($this->_DATA, $this->_originalDATA);
         $data       = $this->_removeNewKeys($mergedData);
 
-        if (!$key) {
-            return $data;
-        }
-
         if (array_key_exists($key, $data)) {
             return $data[$key];
         }
