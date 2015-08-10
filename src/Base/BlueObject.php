@@ -152,14 +152,14 @@ trait BlueObject
      * 
      * @var bool
      */
-    protected $_preparationOn = true;
+    protected $_getPreparationOn = true;
 
     /**
      * allow to turn off/on data retrieve
      * 
      * @var bool
      */
-    protected $_retrieveOn = true;
+    protected $_setPreparationOn = true;
 
     /**
      * inform append* methods that data was set in object creation
@@ -499,7 +499,7 @@ trait BlueObject
             $data = $this->_DATA[$key];
         }
 
-        if ($this->_retrieveOn) {
+        if ($this->_getPreparationOn) {
             return $this->_dataPreparation($key, $data, $this->_dataRetrieveCallbacks);
         }
         return $data;
@@ -1516,7 +1516,7 @@ trait BlueObject
         }
 
         $hasData = $this->has($key);
-        if ($this->_preparationOn) {
+        if ($this->_setPreparationOn) {
             $data = $this->_dataPreparation(
                 $key,
                 $data,
@@ -2196,7 +2196,7 @@ trait BlueObject
      */
     public function stopOutputPreparation()
     {
-        $this->_preparationOn = false;
+        $this->_getPreparationOn = false;
         return $this;
     }
 
@@ -2207,7 +2207,7 @@ trait BlueObject
      */
     public function startOutputPreparation()
     {
-        $this->_preparationOn = true;
+        $this->_getPreparationOn = true;
         return $this;
     }
 
@@ -2218,7 +2218,7 @@ trait BlueObject
      */
     public function stopInputPreparation()
     {
-        $this->_retrieveOn = false;
+        $this->_setPreparationOn = false;
         return $this;
     }
 
@@ -2229,7 +2229,7 @@ trait BlueObject
      */
     public function startInputPreparation()
     {
-        $this->_retrieveOn = true;
+        $this->_setPreparationOn = true;
         return $this;
     }
 
