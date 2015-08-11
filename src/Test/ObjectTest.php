@@ -300,6 +300,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($first, $object->returnOriginalData('data_first'));
         $this->assertTrue($object->keyDataChanged('data_first'));
 
+        $object->set('some_key', 'data');
         $this->assertNull($object->returnOriginalData('some_key'));
 
         $object->restoreDataFirst();
@@ -1412,9 +1413,13 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
      */
     public function testReturnValueForUnCallableFunction()
     {
-        $object = new Object;
+        $object = new Object([
+            'preparation' => [
+                '#data#' => 'im not callable'
+            ]
+        ]);
+
         $object->set('data', 'some data');
-        $object->putValidationRule('#data#', 'im not callable');
 
         $this->assertEquals('some data', $object->get('data'));
     }
