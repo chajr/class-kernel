@@ -1188,12 +1188,14 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             'data'  => $this->_exampleIniData($first, $second),
         ]);
 
+        $this->assertFalse($object->returnProcessIniSection());
         $this->assertEquals($this->_convertType($first), $object->getDataFirst());
         $this->assertEquals($this->_convertType($second), $object->getDataSecond());
 
         $object = new Object(['ini_section' => true]);
         $ini    = $this->_exampleIniData($first, $second, true);
 
+        $this->assertTrue($object->returnProcessIniSection());
         $object->appendIni($ini);
         $this->assertEquals($this->_convertType($first), $object->getDataFirst());
         if (count($second) > 1) {
