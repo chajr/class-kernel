@@ -26,6 +26,13 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
     public function testDataValidation()
     {
         $object = new Object();
+        $data   = [
+            'data_first'    => 'first data',
+            'data_second'   => 'second data',
+            'data_third'    => 'third data',
+            'data_fourth'   => null,
+        ];
+
         $object->putValidationRule('#data_first#', '#^[\d]+$#');
         $object->putValidationRule('#data_second#', '#[\w]*#');
         $object->putValidationRule('#data_(third|fourth)#', function ($key, $data) {
@@ -35,12 +42,13 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             return false;
         });
 
-        $object->set([
-            'data_first'    => 'first data',
-            'data_second'   => 'second data',
-            'data_third'    => 'third data',
-            'data_fourth'   => null,
-        ]);
+        $object->stopValidation();
+        $object->set($data);
+
+        $this->assertFalse($object->checkErrors());
+
+        $object->startValidation();
+        $object->set($data);
 
         $this->assertTrue($object->checkErrors());
         $this->assertEquals($object->returnObjectError()[0], [
@@ -383,6 +391,10 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         }
 
         $this->assertEquals($object['data_first'], $first);
+
+        $object[null] = 'some data';
+
+        $this->assertEquals($object->get('integer_key_0'), 'some data');
     }
 
     /**
@@ -447,16 +459,24 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             return $value;
         });
 
+        $this->assertTrue($object->returnPreparationCallback()['#data_[\w]+#'] instanceof \Closure);
+
+        $object->stopInputPreparation();
+
+        $object->setDataFirst($first);
+        $this->assertEquals($first, $object->getDataFirst());
+
+        $object->startInputPreparation();
+
         $object->setDataFirst($first);
         $object->setDataSecond($second);
 
         $this->assertEquals($first . '_modified', $object->getDataFirst());
         $this->assertEquals('second', $object->toArray('data_second'));
 
-        $object->set([
-            'data_third'    => 'bar',
-            'data_fourth'   => 'moo',
-        ]);
+        $object->removePreparationCallback();
+
+        $this->assertEmpty($object->returnPreparationCallback());
     }
 
     /**
@@ -480,11 +500,24 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             return $value;
         });
 
+        $this->assertTrue($object->returnReturnCallback()['#data_[\w]+#'] instanceof \Closure);
+
+        $object->stopOutputPreparation();
+
+        $object->setDataFirst($first);
+        $this->assertEquals($first, $object->getDataFirst());
+
+        $object->startOutputPreparation();
+
         $object->setDataFirst($first);
         $object->setDataSecond($second);
 
         $this->assertEquals($first . '_modified', $object->getDataFirst());
         $this->assertEquals('second', $object->toArray('data_second'));
+
+        $object->removeReturnCallback();
+
+        $this->assertEmpty($object->returnReturnCallback());
     }
 
     /**

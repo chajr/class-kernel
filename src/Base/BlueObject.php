@@ -2048,7 +2048,7 @@ trait BlueObject
      */
     public function removeReturnCallback($key = null)
     {
-        return $this->_genericReturn($key, 'return_callback');
+        return $this->_genericDestroy($key, 'return_callback');
     }
 
     /**
