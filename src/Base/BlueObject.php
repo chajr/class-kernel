@@ -1850,9 +1850,6 @@ trait BlueObject
     protected function _genericPut($key, $value, $type)
     {
         $listName = $this->_getCorrectList($type);
-        if (!$listName) {
-            return $this;
-        }
 
         if (is_array($key)) {
             $this->$listName = array_merge($this->$listName, $key);
@@ -1874,9 +1871,6 @@ trait BlueObject
     protected function _genericDestroy($key, $type)
     {
         $listName = $this->_getCorrectList($type);
-        if (!$listName) {
-            return $this;
-        }
 
         if ($key) {
             $list = &$this->$listName;
@@ -1899,9 +1893,6 @@ trait BlueObject
         $listName = $this->_getCorrectList($type);
 
         switch (true) {
-            case !$listName:
-                return null;
-
             case !$key:
                 return $this->$listName;
 
@@ -1938,9 +1929,6 @@ trait BlueObject
             case 'return_callback':
                 $type = '_dataRetrieveCallbacks';
                 break;
-
-            default:
-                $type = null;
         }
 
         return $type;

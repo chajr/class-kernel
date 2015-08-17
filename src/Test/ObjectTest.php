@@ -42,6 +42,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
             return false;
         });
 
+        $this->assertEquals('#^[\d]+$#', $object->returnValidationRule('#data_first#'));
+        $this->assertNull($object->returnValidationRule('none_existing_rule'));
+
         $object->stopValidation();
         $object->set($data);
 
@@ -474,9 +477,9 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($first . '_modified', $object->getDataFirst());
         $this->assertEquals('second', $object->toArray('data_second'));
 
-        $object->removePreparationCallback();
+        $object->removePreparationCallback('#data_[\w]+#');
 
-        $this->assertEmpty($object->returnPreparationCallback());
+        $this->assertEmpty($object->returnPreparationCallback('#data_[\w]+#'));
     }
 
     /**
@@ -517,7 +520,7 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
 
         $object->removeReturnCallback();
 
-        $this->assertEmpty($object->returnReturnCallback());
+        $this->assertEmpty($object->returnReturnCallback('#data_[\w]+#'));
     }
 
     /**
