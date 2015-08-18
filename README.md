@@ -21,6 +21,20 @@ Its recommended to use packages `ClassEvents` and optionally `ClassBenchmark`.
 * **ClassKernel\Data\Xml** - extends DOMDocument to handle xml data
 * **ClassKernel\Base\Register** - allow to create objects and singletons
 
+Project Abandoned and split
+--------------
+Project was abandoned and split into different repositories. All fixes and new functionality
+will be developed on that repositories. Class API will still be unchanged, only class
+names can be modified.
+
+* **Register** - moved into [https://github.com/beatawu/Register](https://github.com/beatawu/Register)
+* **BlueObject** - moved into [https://github.com/bluetree-service/container](https://github.com/bluetree-service/container)
+* **Collection** - moved into [https://github.com/bluetree-service/collection](https://github.com/bluetree-service/collection)
+* **Xml** - moved into [https://github.com/bluetree-service/data](https://github.com/bluetree-service/data)
+
+### Latest version
+[0.3.2.15](https://github.com/chajr/class-kernel/releases/tag/v0.3.2.15)
+
 Documentation
 --------------
 * [ClassKernel\Base\BlueObject](https://github.com/chajr/class-kernel/wiki/ClassKernel_Base_BlueObject "BlueObject and Object")

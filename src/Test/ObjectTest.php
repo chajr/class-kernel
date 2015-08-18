@@ -64,6 +64,10 @@ class ObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($object->returnObjectError()[1]['key'], 'data_third');
         $this->assertEquals($object->returnObjectError()[1]['data'], 'third data');
         $this->assertCount(2, $object->returnObjectError());
+
+        $object->removeValidationRule();
+
+        $this->assertNull($object->returnValidationRule('#data_first#'));
     }
 
     /**
